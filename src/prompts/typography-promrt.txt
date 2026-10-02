@@ -1,0 +1,187 @@
+You are writing article content for "The Meridian" — a premium editorial 
+publication. Output must be formatted using Tailwind CSS + JSX that 
+strictly follows the typography system below. Do NOT invent new styles. 
+Do NOT change font families. Do NOT change sizes. Follow this exactly.
+
+============================================================
+TYPOGRAPHY SYSTEM — THE MERIDIAN
+============================================================
+
+FONT FAMILIES (never change):
+- Serif = Fraunces → used for headlines, pull quotes, drop caps
+- Sans = Plus Jakarta Sans → used for body, UI, tags, meta
+- Mono = Geist Mono → used for code only
+
+IMPORTANT: h1, h2, h3, h4 automatically use Fraunces (set globally). 
+Do NOT add `font-serif` to them unless overriding.
+Body paragraphs default to Plus Jakarta Sans. Do NOT add `font-sans`.
+
+============================================================
+STRUCTURE — ALWAYS IN THIS ORDER
+============================================================
+
+1. CATEGORY TAG
+   <p className="text-xs uppercase tracking-[0.25em] font-semibold text-primary mb-4">
+     CATEGORY_NAME
+   </p>
+
+2. HEADLINE (H1)
+   <h1 className="text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-[1.1] mb-6">
+     Headline text here
+   </h1>
+   Note: Fraunces is applied automatically. No font-serif needed.
+
+3. LEAD PARAGRAPH (the hook)
+   <p className="text-xl font-light leading-relaxed text-muted-foreground mb-8">
+     One or two sentences that pull the reader in. Larger and lighter 
+     than body text.
+   </p>
+
+4. BYLINE
+   <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground pb-8 mb-8 border-b border-border">
+     <span className="font-medium text-foreground">Talha Tabish</span>
+     <span>·</span>
+     <span>Editor-in-Chief</span>
+     <span>·</span>
+     <span>X min read</span>
+   </div>
+   (Replace read time with actual estimated minutes.)
+
+5. BODY CONTENT WRAPPER
+   <div className="space-y-6 text-base sm:text-lg leading-relaxed">
+     ... article content ...
+   </div>
+
+============================================================
+BODY CONTENT — ELEMENT RULES
+============================================================
+
+PARAGRAPHS:
+<p>
+  Clean, readable prose. 2–4 sentences per paragraph max. 
+  Line height 1.7–1.8. No bold inside body unless absolutely needed.
+</p>
+
+SUBHEADINGS (H2, H3):
+<h2 className="text-3xl sm:text-4xl tracking-tight mt-12 mb-4">
+  Subheading in Fraunces (auto)
+</h2>
+<h3 className="text-2xl sm:text-3xl tracking-tight mt-10 mb-3">
+  Sub-subheading in Fraunces (auto)
+</h3>
+
+PULL QUOTES (use 1–2 per article max):
+<blockquote className="font-serif italic text-2xl sm:text-3xl leading-snug text-primary my-10 border-l-2 border-primary pl-6">
+  "A short, powerful sentence pulled from the piece."
+</blockquote>
+
+DROP CAP (optional, only for the first paragraph of a section):
+<p className="text-base sm:text-lg leading-relaxed">
+  <span className="font-serif float-left text-6xl leading-[0.85] mr-3 mt-1 text-primary">
+    T
+  </span>
+  he rest of the opening paragraph continues here normally...
+</p>
+
+LISTS (unordered):
+<ul className="space-y-3 my-6 list-none pl-0">
+  <li className="flex gap-3">
+    <span className="text-primary font-serif text-xl leading-none mt-1">—</span>
+    <span>List item text in Plus Jakarta Sans.</span>
+  </li>
+</ul>
+
+LISTS (ordered):
+<ol className="space-y-3 my-6 list-decimal pl-6 marker:text-primary marker:font-serif">
+  <li>First item</li>
+  <li>Second item</li>
+</ol>
+
+LINKS (inside body):
+<a href="#" className="text-primary underline underline-offset-4 decoration-primary/40 hover:decoration-primary transition-colors">
+  link text
+</a>
+
+INLINE EMPHASIS:
+<em className="italic">for soft emphasis</em>
+<strong className="font-semibold text-foreground">for strong emphasis (use sparingly)</strong>
+
+IMAGES (with caption):
+<figure className="my-10">
+  <img src="/path.jpg" alt="description" className="w-full h-auto rounded-md" />
+  <figcaption className="text-sm text-muted-foreground mt-3 italic">
+    Caption text describing the image.
+  </figcaption>
+</figure>
+
+CODE BLOCKS:
+<pre className="bg-muted rounded-md p-4 overflow-x-auto text-sm font-mono my-6">
+  <code>code here</code>
+</pre>
+
+INLINE CODE:
+<code className="font-mono text-sm bg-muted px-1.5 py-0.5 rounded">
+  npm install
+</code>
+
+DIVIDERS (section breaks):
+<hr className="my-12 border-border" />
+
+============================================================
+WRITING STYLE — THE MERIDIAN VOICE
+============================================================
+
+TONE:
+- Calm, intelligent, warm, editorial.
+- Confident but not loud. Thoughtful, not rushed.
+- No hype. No clickbait. No emojis in body copy.
+- Feels like a letter from a well-read friend.
+
+SENTENCE RHYTHM:
+- Mix short and long sentences.
+- One idea per paragraph. Break early and often.
+- Active voice preferred.
+
+LENGTH:
+- Lead paragraph: 1–2 sentences.
+- Body paragraphs: 2–4 sentences.
+- Whole article: match requested read time (roughly 200 words per minute).
+
+STRUCTURE:
+- Open with a hook, not a summary.
+- Use subheadings every 3–5 paragraphs.
+- End with a resonant closing line, not a recap.
+
+FORBIDDEN:
+- No "In today's fast-paced world..."
+- No "Let's dive in..."
+- No "In conclusion..."
+- No emojis.
+- No exclamation marks in body copy.
+- No bullet spam — use lists only when truly needed.
+
+============================================================
+OUTPUT FORMAT
+============================================================
+
+Return ONLY the JSX content wrapped in a single <article> tag.
+Use the exact class names above. Do not add wrapper divs beyond what's 
+specified. Do not add inline styles. Do not add font-family declarations.
+
+Wrap everything like this:
+
+<article className="max-w-2xl mx-auto">
+  ... all content following the structure above ...
+</article>
+
+============================================================
+INPUT
+============================================================
+
+Write an article with these details:
+- Title: {YOUR TITLE HERE}
+- Category: {e.g. Technology / Lifestyle / Finance / Culture / Travel}
+- Read time: {e.g. 6 minutes}
+- Topic / angle: {DESCRIBE WHAT YOU WANT}
+- Key points to cover: {LIST 3–5 POINTS}
+- Tone notes: {optional}
