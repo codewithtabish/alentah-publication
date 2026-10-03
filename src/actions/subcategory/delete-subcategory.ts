@@ -1,18 +1,16 @@
-// src/lib/actions/subcategory/delete-subcategory.ts
+// src/actions/subcategory/delete-subcategory.ts
 "use server";
 
 // ============================================================
-// Server Action — Delete Subcategory
+// Server Action — Delete Subcategory (FULL CASCADE)
+// Deletes: subcategory + all its articles + all their
+// SEO, tags, comments, bookmarks, likes.
 // ============================================================
 
 import { auth } from "@clerk/nextjs/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import prisma from "@/lib/clients/prisma-client";
-import {
-  revalidateCategory,
-  revalidateSubcategory,
-  revalidateCategories,
-  revalidateDashboardSection,
-} from "@/lib/cache-keys";
+import { CACHE_TAGS } from "@/lib/cache-keys";
 
 // ============================================================
 // TYPES
@@ -21,7 +19,12 @@ import {
 export type DeleteSubcategoryResult =
   | {
       success: true;
-      deleted: { id: string; name: string; slug: string };
+      deleted: {
+        id: string;
+        name: string;
+        slug: string;
+        articlesDeleted: number;
+      };
     }
   | { success: false; error: string };
 
@@ -32,9 +35,7 @@ export type DeleteSubcategoryResult =
 async function requireAdmin(): Promise<
   { ok: true; userId: string } | { ok: false; error: string }
 > {
-  const { auth: clerkAuth, currentUser } = await import(
-    "@clerk/nextjs/server"
-  );
+  const { auth: clerkAuth } = await import("@clerk/nextjs/server");
   const delays = [0, 200, 400, 700];
 
   for (const delay of delays) {
@@ -49,20 +50,14 @@ async function requireAdmin(): Promise<
         const role = (sessionClaims?.metadata as { role?: string } | undefined)
           ?.role;
 
-        if (role === "ADMIN") return { ok: true, userId };
-
-        try {
-          const user = await currentUser();
-          const metaRole = (
-            user?.publicMetadata as { role?: string } | undefined
-          )?.role;
-
-          if (metaRole === "ADMIN") return { ok: true, userId };
-
-          return { ok: false, error: "Only admins can delete subcategories." };
-        } catch {
-          continue;
+        if (role === "ADMIN") {
+          return { ok: true, userId };
         }
+
+        return {
+          ok: false,
+          error: "Only admins can delete subcategories.",
+        };
       }
     } catch {
       continue;
@@ -80,13 +75,14 @@ export async function deleteSubcategory(
   id: string,
 ): Promise<DeleteSubcategoryResult> {
   try {
+    // ─── Auth ───
     const authCheck = await requireAdmin();
 
     if (!authCheck.ok) {
       return { success: false, error: authCheck.error };
     }
 
-    // ─── Load existing ───
+    // ─── Load subcategory + its articles + parent category ───
     const existing = await prisma.subcategory.findUnique({
       where: { id },
       select: {
@@ -94,10 +90,10 @@ export async function deleteSubcategory(
         name: true,
         slug: true,
         category: {
-          select: { id: true, slug: true, name: true },
+          select: { id: true, name: true, slug: true },
         },
-        _count: {
-          select: { blogs: true },
+        blogs: {
+          select: { id: true, slug: true },
         },
       },
     });
@@ -106,22 +102,80 @@ export async function deleteSubcategory(
       return { success: false, error: "Subcategory not found." };
     }
 
-    // ─── Safety: block if it has articles ───
-    if (existing._count.blogs > 0) {
-      return {
-        success: false,
-        error: `This subcategory has ${existing._count.blogs} article(s). Move or delete them first.`,
-      };
+    const articleIds = existing.blogs.map((b) => b.id);
+    const articleSlugs = existing.blogs.map((b) => b.slug);
+    const categorySlug = existing.category.slug;
+
+    console.log(
+      `[deleteSubcategory] Cascade deleting "${existing.name}": ` +
+        `${articleIds.length} articles under "${existing.category.name}"`,
+    );
+
+    // ─── Delete everything in a transaction ───
+    // Order matters: children first, then the subcategory.
+    await prisma.$transaction(async (tx) => {
+      if (articleIds.length > 0) {
+        // 1. Engagement + relations on all articles
+        await tx.bookmark.deleteMany({
+          where: { blogId: { in: articleIds } },
+        });
+
+        await tx.blogLike.deleteMany({
+          where: { blogId: { in: articleIds } },
+        });
+
+        await tx.comment.deleteMany({
+          where: { blogId: { in: articleIds } },
+        });
+
+        await tx.blogTag.deleteMany({
+          where: { blogId: { in: articleIds } },
+        });
+
+        await tx.blogSEO.deleteMany({
+          where: { blogId: { in: articleIds } },
+        });
+
+        // 2. Delete the articles themselves
+        await tx.blog.deleteMany({
+          where: { id: { in: articleIds } },
+        });
+      }
+
+      // 3. Delete the subcategory
+      await tx.subcategory.delete({
+        where: { id },
+      });
+    });
+
+    // ─── Invalidate EVERYTHING affected ───
+    // Paths
+    revalidatePath("/admin/categories");
+    revalidatePath("/admin/articles");
+    revalidatePath("/admin");
+    revalidatePath("/");
+    revalidatePath(`/category/${categorySlug}`);
+    revalidatePath(`/category/${categorySlug}/${existing.slug}`);
+
+    for (const slug of articleSlugs) {
+      revalidatePath(`/article/${slug}`);
     }
 
-    // ─── Delete ───
-    await prisma.subcategory.delete({ where: { id } });
+    // Cache tags
+    revalidateTag(CACHE_TAGS.categories, "max");
+    revalidateTag(CACHE_TAGS.category(categorySlug), "max");
+    revalidateTag(CACHE_TAGS.categoryPageBlogs(categorySlug), "max");
+    revalidateTag(CACHE_TAGS.subcategoryPageBlogs(existing.slug), "max");
+    revalidateTag(CACHE_TAGS.dashboardCategories, "max");
 
-    // ─── Invalidate caches ───
-    revalidateCategory(existing.category.slug);
-    revalidateSubcategory(existing.slug, existing.category.slug);
-    revalidateCategories();
-    revalidateDashboardSection("categories");
+    revalidateTag(CACHE_TAGS.blogs, "max");
+    revalidateTag(CACHE_TAGS.dashboardBlogs, "max");
+    revalidateTag(CACHE_TAGS.home, "max");
+    revalidateTag(CACHE_TAGS.homeScreen, "max");
+
+    for (const slug of articleSlugs) {
+      revalidateTag(CACHE_TAGS.blog(slug), "max");
+    }
 
     return {
       success: true,
@@ -129,6 +183,7 @@ export async function deleteSubcategory(
         id: existing.id,
         name: existing.name,
         slug: existing.slug,
+        articlesDeleted: articleIds.length,
       },
     };
   } catch (error) {
@@ -143,7 +198,7 @@ export async function deleteSubcategory(
       return {
         success: false,
         error:
-          "Cannot delete this subcategory — it has related records. Remove them first.",
+          "Cannot delete this subcategory — it has related records. Please try again.",
       };
     }
 

@@ -78,6 +78,19 @@
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* ============================================
+     BODY / PARAGRAPH FONT
+     ------------------------------------------------------------
+     Dedicated font stack for long-form reading.
+
+     Default: editorial serif (Fraunces) — feels like a
+     real magazine / newspaper.
+
+     To use sans-serif for body text instead, change the
+     first entry to `var(--font-jakarta)`.
+     ============================================ */
+  --font-body: var(--font-fraunces), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+
+  /* ============================================
      RESPONSIVE BREAKPOINTS
      Extra breakpoints for editorial padding scale.
      ============================================ */
@@ -200,9 +213,13 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground font-sans;
     letter-spacing: var(--tracking-normal);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* ============================================
@@ -210,20 +227,159 @@
      All headings default to Fraunces (serif).
      Override anytime with `font-sans`.
      ============================================ */
-  h1, h2, h3, h4 {
+  h1, h2, h3, h4, h5, h6 {
     @apply font-serif;
+    text-wrap: balance;
+  }
+
+  /* ============================================
+     PARAGRAPH — DEDICATED READER STYLES
+     ------------------------------------------------------------
+     • Own font family (--font-body, editorial serif by default)
+     • Own line-height for long-form reading
+     • Own size scaling across breakpoints
+     • JUSTIFIED on large screens, left-aligned on mobile
+     • Hyphenation enabled for clean justification
+     • Last line stays left-aligned (no stretched gaps)
+     • Long URLs wrap safely (no overflow)
+     ============================================ */
+  p {
+    font-family: var(--font-body);
+    font-size: 1.0625rem;          /* 17px on mobile */
+    line-height: 1.75;              /* generous leading */
+    color: color-mix(in oklab, var(--foreground) 92%, transparent);
+    margin-block-end: 1.5rem;       /* 24px paragraph gap */
+
+    /* Text wrapping */
+    text-wrap: pretty;
+    overflow-wrap: break-word;
+    word-break: break-word;
+
+    /* Alignment — mobile is left, lg is justified */
+    text-align: left;
+    text-align-last: left;
+
+    /* Justification needs hyphens to avoid ugly gaps */
+    hyphens: auto;
+    -webkit-hyphens: auto;
+  }
+
+  /* Tablet and up — slightly larger, still left-aligned */
+  @media (min-width: 40rem) {
+    p {
+      font-size: 1.125rem;          /* 18px */
+      line-height: 1.8;
+    }
+  }
+
+  /* Large devices and up — JUSTIFIED text */
+  @media (min-width: 64rem) {
+    p {
+      text-align: justify;
+      text-justify: inter-word;
+      text-align-last: left;
+      hyphens: auto;
+    }
+  }
+
+  /* ============================================
+     PARAGRAPHS INSIDE LISTS / CAPTIONS
+     Keep list items left-aligned for clarity.
+     ============================================ */
+  li > p,
+  figcaption,
+  blockquote > footer {
+    text-align: left;
+    text-align-last: left;
+    hyphens: none;
   }
 }
 
-/* ============================================
-   SCROLL BEHAVIOR
-   ============================================ */
+/* ============================================================
+   SCROLL BEHAVIOR + FULLY HIDDEN SCROLLBARS
+   ------------------------------------------------------------
+   Applied to EVERY element that can scroll:
+     • html / body
+     • any <div> with overflow
+     • code blocks / pre
+     • textareas
+   Works across Chrome, Safari, Firefox, Edge, and IE/legacy.
+   ============================================================ */
+
+/* Smooth scroll on the root */
 html {
   scroll-behavior: smooth;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
 }
 
-html::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
+/* ------------------------------------------------------------
+   Hide scrollbars — Firefox / modern
+   ------------------------------------------------------------ */
+* {
+  scrollbar-width: none;      /* Firefox 64+ */
+  -ms-overflow-style: none;   /* IE 10+, Edge Legacy */
+}
+
+/* ------------------------------------------------------------
+   Hide scrollbars — WebKit (Chrome, Safari, Edge Chromium, Brave)
+   ------------------------------------------------------------ */
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: transparent;
+  border: none;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ------------------------------------------------------------
+   Belt-and-braces: force hidden on the specific elements
+   ------------------------------------------------------------ */
+html,
+body,
+main,
+aside,
+section,
+article,
+nav,
+div,
+pre,
+code,
+textarea,
+.select,
+[data-toc],
+[data-code-switcher],
+[data-code-language-content] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+main::-webkit-scrollbar,
+aside::-webkit-scrollbar,
+section::-webkit-scrollbar,
+article::-webkit-scrollbar,
+nav::-webkit-scrollbar,
+div::-webkit-scrollbar,
+pre::-webkit-scrollbar,
+code::-webkit-scrollbar,
+textarea::-webkit-scrollbar,
+[data-toc]::-webkit-scrollbar,
+[data-code-switcher]::-webkit-scrollbar,
+[data-code-language-content]::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
 }

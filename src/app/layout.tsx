@@ -490,7 +490,7 @@ export default function RootLayout({
         />
       </head>
 
-      <body className="min-h-full flex flex-col font-sans">
+      <body className="min-h-full flex flex-col font-sans scrollbar-none  overflow-x-hidden ">
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

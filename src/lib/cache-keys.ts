@@ -38,7 +38,7 @@ export const CACHE_TAGS = {
   newsletterSubscribers: "newsletter:subscribers",
 
   // ── Home ──
-  home: "home",
+  home: "homeblogs",
   homeScreen: "home:screen",
 
   // ── Dashboard ──

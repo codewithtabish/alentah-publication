@@ -41,15 +41,18 @@ export function Container({
         "px-4",
         "sm:px-6",
         "md:px-8",
-        "lg:px-12",
-        "xl:px-16",
-        "2xl:px-20",
+        "lg:px-8",
+        "xl:px-10",
+        "2xl:px-12",
 
         // ============================================================
         // PUBLIC AMBIENT BACKGROUND
+        // ------------------------------------------------------------
+        // Very subtle top fade — barely visible, just enough to
+        // add depth without overpowering the page.
         // ============================================================
-        "bg-[radial-gradient(ellipse_100%_60%_at_50%_-10%,color-mix(in_oklab,var(--primary)_5%,transparent),transparent_60%)]",
-        "dark:bg-[radial-gradient(ellipse_100%_60%_at_50%_-10%,color-mix(in_oklab,var(--primary)_14%,transparent),transparent_60%)]",
+        "bg-[radial-gradient(ellipse_100%_50%_at_50%_-10%,color-mix(in_oklab,var(--primary)_2%,transparent),transparent_60%)]",
+        "dark:bg-[radial-gradient(ellipse_100%_50%_at_50%_-10%,color-mix(in_oklab,var(--primary)_6%,transparent),transparent_60%)]",
 
         className,
       )}
@@ -57,6 +60,9 @@ export function Container({
     >
       {/* ============================================================
           PUBLIC AMBIENT GLOWS
+          ------------------------------------------------------------
+          Both glows are now much lighter and softer.
+          They whisper — they don't shout.
           ============================================================ */}
 
       {/* Top-center glow */}
@@ -64,12 +70,12 @@ export function Container({
         aria-hidden="true"
         className={cn(
           "pointer-events-none absolute left-1/2 top-[-15%] -translate-x-1/2",
-          "h-[500px] w-[500px]",
-          "sm:h-[700px] sm:w-[700px]",
-          "lg:h-[900px] lg:w-[900px]",
-          "rounded-full blur-[100px]",
-          "bg-[radial-gradient(circle,color-mix(in_oklab,var(--primary)_8%,transparent),transparent_70%)]",
-          "dark:bg-[radial-gradient(circle,color-mix(in_oklab,var(--primary)_18%,transparent),transparent_70%)]",
+          "h-[400px] w-[400px]",
+          "sm:h-[550px] sm:w-[550px]",
+          "lg:h-[700px] lg:w-[700px]",
+          "rounded-full blur-[120px]",
+          "bg-[radial-gradient(circle,color-mix(in_oklab,var(--primary)_3%,transparent),transparent_70%)]",
+          "dark:bg-[radial-gradient(circle,color-mix(in_oklab,var(--primary)_8%,transparent),transparent_70%)]",
         )}
       />
 
@@ -78,12 +84,12 @@ export function Container({
         aria-hidden="true"
         className={cn(
           "pointer-events-none absolute bottom-[-20%] right-[-10%]",
-          "h-[400px] w-[400px]",
-          "sm:h-[550px] sm:w-[550px]",
-          "lg:h-[700px] lg:w-[700px]",
-          "rounded-full blur-[120px]",
-          "bg-[radial-gradient(circle,color-mix(in_oklab,var(--primary)_5%,transparent),transparent_70%)]",
-          "dark:bg-[radial-gradient(circle,color-mix(in_oklab,var(--primary)_10%,transparent),transparent_70%)]",
+          "h-[350px] w-[350px]",
+          "sm:h-[450px] sm:w-[450px]",
+          "lg:h-[600px] lg:w-[600px]",
+          "rounded-full blur-[140px]",
+          "bg-[radial-gradient(circle,color-mix(in_oklab,var(--primary)_2%,transparent),transparent_70%)]",
+          "dark:bg-[radial-gradient(circle,color-mix(in_oklab,var(--primary)_5%,transparent),transparent_70%)]",
         )}
       />
 
