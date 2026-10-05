@@ -1,7 +1,9 @@
 // src/components/blog/blog-header.tsx
 // ============================================================
 // BlogHeader — ALENTAH
-// Article hero: type badge, title, description, meta, banner.
+// Article hero: category, title, description, meta, banner.
+// Fully responsive. Editorial premium styling.
+// Title + description span full width.
 // ============================================================
 
 import { CalendarDays, Clock3, UserRound } from "lucide-react";
@@ -18,12 +20,8 @@ export type BlogHeaderProps = {
 
   /**
    * Article type as a string.
-   *
-   * Accepted for compatibility with the Prisma `BlogType` enum
-   * (e.g. "BLOG_POST", "NEWS_ARTICLE") AND with the widened
-   * `string` returned by the DB action, so this component never
-   * triggers a TypeScript "string is not assignable to enum"
-   * error at the call site.
+   * Compatible with the Prisma `BlogType` enum AND with the
+   * widened `string` returned by the DB action.
    */
   type: string;
 
@@ -79,14 +77,22 @@ function formatPublishedDate(date: Date | null): string | null {
   }
 }
 
-/**
- * Turns "BLOG_POST" into "BLOG POST".
- * Safe for any string input.
- */
 function formatBlogType(type: string): string {
-  return String(type)
-    .replace(/_/g, " ")
-    .trim();
+  return String(type).replace(/_/g, " ").trim();
+}
+
+function getInitials(name: string): string {
+  const parts = name.split(" ").filter(Boolean);
+
+  if (parts.length === 0) return "A";
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return (
+    parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+  ).toUpperCase();
 }
 
 // ============================================================
@@ -102,57 +108,132 @@ export default function BlogHeader({
   bannerImage,
   bannerImageAlt,
   author,
+  category,
+  subcategory,
 }: BlogHeaderProps) {
   const authorName = getAuthorName(author);
   const formattedDate = formatPublishedDate(publishedAt);
 
+  const categoryLabel = subcategory?.name || category.name;
+  const categorySlug = subcategory?.slug || category.slug;
+
+  const initials = getInitials(authorName);
+
   return (
-    <header className="pb-10 pt-8 sm:pb-12 lg:pb-16">
+    <header className="relative w-full overflow-hidden pt-10 sm:pt-14 lg:pt-16">
       {/* =====================================================
-          ARTICLE TYPE
+          AMBIENT BACKGROUND
+          Soft top glow + bottom fade for depth
       ====================================================== */}
-      <div className="mb-5">
-        <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
-          {formatBlogType(type)}
-        </span>
-      </div>
+      <div
+        aria-hidden="true"
+        className={[
+          "pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px]",
+          "bg-[radial-gradient(ellipse_50%_70%_at_50%_0%,color-mix(in_oklab,var(--primary)_6%,transparent),transparent_75%)]",
+          "dark:bg-[radial-gradient(ellipse_50%_70%_at_50%_0%,color-mix(in_oklab,var(--primary)_10%,transparent),transparent_75%)]",
+        ].join(" ")}
+      />
 
-      {/* =====================================================
-          TITLE
-      ====================================================== */}
-      <h1 className="max-w-5xl text-4xl font-bold leading-[1.05] tracking-[-0.035em] text-foreground sm:text-5xl lg:text-6xl xl:text-[4.25rem]">
-        {title}
-      </h1>
+      <div className="w-full">
+        {/* =====================================================
+            CATEGORY KICKER
+            Small dot + uppercase label + hairline
+        ====================================================== */}
+        <div className="flex items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="inline-block size-1.5 rounded-full bg-primary"
+          />
 
-      {/* =====================================================
-          DESCRIPTION
-      ====================================================== */}
-      {shortDescription && (
-        <p className="mt-6 max-w-3xl text-lg leading-8 text-muted-foreground sm:text-xl sm:leading-9">
-          {shortDescription}
-        </p>
-      )}
+          <p
+            className="text-[11px] font-bold uppercase tracking-[0.24em] text-primary"
+            aria-label="Category"
+          >
+            {categoryLabel}
+            {subcategory && category?.name && (
+              <span className="sr-only"> — {category.name}</span>
+            )}
+          </p>
 
-      {/* =====================================================
-          AUTHOR + META
-      ====================================================== */}
-      <div className="mt-8 flex flex-col gap-5 border-t border-dashed border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-          {/* Author */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-full bg-muted">
-              <UserRound className="size-4 text-muted-foreground" />
-            </div>
+          <span
+            aria-hidden="true"
+            className="h-px flex-1 max-w-[120px] bg-linear-to-r from-primary/40 to-transparent"
+          />
+        </div>
 
-            <span className="text-sm font-semibold text-foreground">
-              {authorName}
+        {/* =====================================================
+            TITLE — full width
+        ====================================================== */}
+        <h1
+          className={[
+            "mt-5 w-full font-bold tracking-[-0.035em] text-foreground",
+            "text-[1.875rem] leading-[1.15]",
+            "sm:text-4xl sm:leading-[1.12]",
+            "md:text-5xl md:leading-[1.1]",
+            "lg:text-[3.5rem] lg:leading-[1.06]",
+            "xl:text-[4rem] xl:leading-[1.05]",
+          ].join(" ")}
+        >
+          {title}
+        </h1>
+
+        {/* =====================================================
+            DESCRIPTION — full width
+        ====================================================== */}
+        {shortDescription && (
+          <p
+            className={[
+              "mt-6 w-full text-muted-foreground",
+              "text-base leading-7",
+              "sm:text-[1.0625rem] sm:leading-8",
+              "md:text-lg md:leading-9",
+            ].join(" ")}
+          >
+            {shortDescription}
+          </p>
+        )}
+
+        {/* =====================================================
+            AUTHOR + META
+        ====================================================== */}
+        <div className="mt-9 flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-border/70 pt-6 sm:mt-10">
+          {/* Author chip */}
+          <div className="flex items-center gap-3">
+            <span
+              aria-hidden="true"
+              className={[
+                "flex size-9 items-center justify-center rounded-full",
+                "border border-border bg-muted/60",
+                "text-[11px] font-bold tracking-wide text-foreground",
+              ].join(" ")}
+            >
+              {initials}
             </span>
+
+            <div className="flex flex-col leading-tight">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
+                Written by
+              </span>
+
+              <span className="text-sm font-semibold text-foreground">
+                {authorName}
+              </span>
+            </div>
           </div>
+
+          {/* Divider */}
+          <span
+            aria-hidden="true"
+            className="hidden h-8 w-px bg-border sm:block"
+          />
 
           {/* Date */}
           {formattedDate && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CalendarDays className="size-4" />
+              <CalendarDays
+                className="size-3.5 opacity-70"
+                aria-hidden="true"
+              />
 
               <time
                 dateTime={
@@ -168,43 +249,92 @@ export default function BlogHeader({
 
           {/* Reading time */}
           {readingTime !== null && readingTime > 0 && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock3 className="size-4" />
-              <span>{readingTime} min read</span>
-            </div>
+            <>
+              <span
+                aria-hidden="true"
+                className="hidden size-1 rounded-full bg-muted-foreground/40 sm:block"
+              />
+
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock3
+                  className="size-3.5 opacity-70"
+                  aria-hidden="true"
+                />
+                <span>{readingTime} min read</span>
+              </div>
+            </>
+          )}
+
+          {/* Article type badge */}
+          {type && (
+            <span
+              className={[
+                "ml-auto hidden sm:inline-flex",
+                "items-center rounded-full",
+                "border border-border/70 bg-muted/40",
+                "px-3 py-1",
+                "text-[10px] font-bold uppercase tracking-[0.18em]",
+                "text-muted-foreground",
+              ].join(" ")}
+            >
+              {formatBlogType(type)}
+            </span>
           )}
         </div>
-      </div>
 
-      {/* =====================================================
-          HERO BANNER
-      ====================================================== */}
-      <div className="mt-10 sm:mt-12 lg:mt-14">
-        <div className="group relative overflow-hidden rounded-2xl border border-border bg-muted shadow-sm sm:rounded-3xl">
-          <div className="relative aspect-video w-full">
-            <Image
-              src={bannerImage}
-              alt={bannerImageAlt || title}
-              fill
-              priority
-              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px"
-              className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.015]"
-            />
+        {/* =====================================================
+            HERO BANNER — full width
+        ====================================================== */}
+        {bannerImage && (
+          <figure className="mt-10 w-full sm:mt-12 lg:mt-14">
+            <div
+              className={[
+                "group relative w-full overflow-hidden",
+                "rounded-2xl border border-border",
+                "bg-muted shadow-[0_1px_0_0_rgba(255,255,255,0.03)_inset,0_20px_50px_-30px_rgba(0,0,0,0.6)]",
+                "sm:rounded-3xl",
+              ].join(" ")}
+            >
+              <div className="relative aspect-video w-full">
+                <Image
+                  src={bannerImage}
+                  alt={bannerImageAlt || title}
+                  fill
+                  priority
+                  sizes="100vw"
+                  className="object-cover transition-transform duration-900 ease-out group-hover:scale-[1.02]"
+                />
 
-            {/* Image readability overlay */}
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/25 via-transparent to-black/5" />
+                {/* Top fade */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-linear-to-b from-black/20 to-transparent"
+                />
 
-            {/* Bottom subtle vignette */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black/15 to-transparent" />
-          </div>
-        </div>
+                {/* Bottom fade */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black/35 via-black/10 to-transparent"
+                />
 
-        {/* Image caption / alt context */}
-        {bannerImageAlt && (
-          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-            {bannerImageAlt}
-          </p>
+                {/* Hairline inner border */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/5 sm:rounded-3xl"
+                />
+              </div>
+            </div>
+
+            {bannerImageAlt && (
+              <figcaption className="mt-3 text-center text-[11px] leading-relaxed tracking-wide text-muted-foreground/80">
+                {bannerImageAlt}
+              </figcaption>
+            )}
+          </figure>
         )}
+
+        {/* Screen-reader safety: category slug */}
+        <span className="sr-only">{categorySlug}</span>
       </div>
     </header>
   );

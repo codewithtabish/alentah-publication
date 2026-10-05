@@ -1,38 +1,38 @@
 // src/app/admin/categories/page.tsx
 // ============================================================
-// Categories List Page — ALENTAH Admin
-// Uses cached getCategories() with Suspense + skeleton.
+// Admin Categories Page — ALENTAH
+//
+// Next.js 16 / Cache Components pattern:
+//   - Page shell renders instantly (no runtime data)
+//   - <Suspense> wraps the async child that awaits auth() + data
 // ============================================================
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { auth } from "@clerk/nextjs/server";
 
 import { cn } from "@/lib/utils";
-import { getCategories } from "@/actions/category/get-categories";
 import { CategoriesTable } from "@/components/site/admim/category/categories-table";
+import { getAdminCategories } from "@/actions/category/get-categories-admin";
 
 export const metadata = {
   title: "Categories — Alentah Admin",
-  description: "Manage the sections of Alentah.",
 };
 
 // ============================================================
-// PAGE
+// PAGE SHELL — no runtime data, renders instantly
 // ============================================================
 
-export default function CategoriesPage() {
+export default function AdminCategoriesPage() {
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-[1600px]">
       {/* BREADCRUMBS */}
       <nav
         aria-label="Breadcrumb"
         className="mb-6 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
       >
-        <Link
-          href="/admin"
-          className="transition-colors hover:text-foreground"
-        >
+        <Link href="/admin" className="transition-colors hover:text-foreground">
           Admin
         </Link>
         <ChevronRight
@@ -47,7 +47,7 @@ export default function CategoriesPage() {
         <div>
           <h1 className="font-serif text-4xl tracking-tight">Categories</h1>
           <p className="mt-2 max-w-lg text-sm text-muted-foreground">
-            Manage the sections and subcategories that shape Alentah.
+            Manage every section and subcategory across Alentah.
           </p>
         </div>
 
@@ -57,15 +57,14 @@ export default function CategoriesPage() {
             "inline-flex h-10 items-center justify-center gap-2 rounded-full px-5",
             "bg-primary text-primary-foreground",
             "text-[11px] font-semibold uppercase tracking-[0.15em]",
-            "hover:bg-primary/90 transition-colors",
+            "transition-colors hover:bg-primary/90",
           )}
         >
-          <Plus className="h-4 w-4" strokeWidth={2.25} />
           New Category
         </Link>
       </div>
 
-      {/* CONTENT */}
+      {/* CONTENT — all runtime data lives inside Suspense */}
       <Suspense fallback={<CategoriesSkeleton />}>
         <CategoriesContent />
       </Suspense>
@@ -74,11 +73,43 @@ export default function CategoriesPage() {
 }
 
 // ============================================================
-// ASYNC CONTENT
+// ASYNC CONTENT — auth + data, inside the Suspense boundary
 // ============================================================
 
 async function CategoriesContent() {
-  const result = await getCategories();
+  // ---- Auth check ----
+  const { userId, sessionClaims } = await auth();
+
+  if (!userId) {
+    return (
+      <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-8 text-center">
+        <p className="mb-2 font-serif text-xl tracking-tight">
+          Not authenticated
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Please sign in to continue.
+        </p>
+      </div>
+    );
+  }
+
+  const role = (sessionClaims?.metadata as { role?: string } | undefined)?.role;
+
+  if (role !== "ADMIN") {
+    return (
+      <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-8 text-center">
+        <p className="mb-2 font-serif text-xl tracking-tight">
+          Not authorized
+        </p>
+        <p className="text-sm text-muted-foreground">
+          You don&apos;t have access to this page.
+        </p>
+      </div>
+    );
+  }
+
+  // ---- Data fetch ----
+  const result = await getAdminCategories();
 
   if (!result.success) {
     return (
@@ -95,15 +126,14 @@ async function CategoriesContent() {
 }
 
 // ============================================================
-// SKELETON FALLBACK
+// SKELETON
 // ============================================================
 
 function CategoriesSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Stats skeleton */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {[0, 1, 2].map((i) => (
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
             className="rounded-2xl border border-border bg-card px-5 py-4"
@@ -114,44 +144,20 @@ function CategoriesSkeleton() {
         ))}
       </div>
 
-      {/* Table skeleton */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="hidden border-b border-border bg-muted/40 px-6 py-3 md:grid md:grid-cols-[80px_minmax(0,2fr)_minmax(0,1.4fr)_120px_120px_120px] md:gap-4">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className="h-2.5 w-16 animate-pulse rounded-full bg-muted"
-            />
-          ))}
+        <div className="border-b border-border px-6 py-4">
+          <div className="h-3 w-32 animate-pulse rounded-full bg-muted" />
         </div>
-
         <ul className="divide-y divide-border">
           {[0, 1, 2, 3, 4].map((i) => (
-            <li
-              key={i}
-              className="grid grid-cols-1 items-center gap-4 px-6 py-4 md:grid-cols-[80px_minmax(0,2fr)_minmax(0,1.4fr)_120px_120px_120px]"
-            >
-              <div className="h-14 w-14 animate-pulse rounded-xl bg-muted" />
-
-              <div className="space-y-2">
-                <div className="h-3 w-32 animate-pulse rounded-full bg-muted" />
-                <div className="h-2.5 w-40 animate-pulse rounded-full bg-muted/70" />
+            <li key={i} className="flex items-center gap-3 px-6 py-4">
+              <div className="h-6 w-6 animate-pulse rounded-md bg-muted" />
+              <div className="h-12 w-12 animate-pulse rounded-xl bg-muted" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3.5 w-40 animate-pulse rounded-full bg-muted" />
+                <div className="h-2.5 w-24 animate-pulse rounded-full bg-muted/70" />
               </div>
-
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 animate-pulse rounded-full bg-muted" />
-                <div className="h-3 w-24 animate-pulse rounded-full bg-muted" />
-              </div>
-
-              <div className="h-3 w-20 animate-pulse rounded-full bg-muted" />
-
               <div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
-
-              <div className="flex justify-end gap-1.5">
-                <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
-                <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
-                <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
-              </div>
             </li>
           ))}
         </ul>

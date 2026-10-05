@@ -501,7 +501,7 @@ export default function RootLayout({
             appearance={clerkAppearance}
           
           >
-            <main className="flex min-h-screen flex-1 flex-col">
+            <main className="flex flex-1 flex-col">
               {children}
             </main>
 

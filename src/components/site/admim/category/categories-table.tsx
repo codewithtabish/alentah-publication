@@ -28,16 +28,16 @@ import {
   DeleteCategoryDialog,
   type DeleteCategoryTarget,
 } from "./delete-category-dialog";
-import { CategoryListItem, SubcategoryItem } from "@/actions/category/get-categories";
-import { deleteSubcategory } from "@/actions/subcategory/delete-subcategory";
 
+import { deleteSubcategory } from "@/actions/subcategory/delete-subcategory";
+import { AdminCategoryItem, SubcategoryItem } from "@/actions/category/get-categories-admin";
 
 // ============================================================
 // TYPES
 // ============================================================
 
 interface CategoriesTableProps {
-  categories: CategoryListItem[];
+  categories: AdminCategoryItem[];
 }
 
 // ============================================================
@@ -52,7 +52,7 @@ export function CategoriesTable({ categories }: CategoriesTableProps) {
 
   const [deleteSubTarget, setDeleteSubTarget] = React.useState<{
     sub: SubcategoryItem;
-    category: CategoryListItem;
+    category: AdminCategoryItem;
   } | null>(null);
 
   // All categories expanded by default
@@ -290,7 +290,7 @@ export function CategoriesTable({ categories }: CategoriesTableProps) {
                       </Link>
 
                       <Link
-                        href={`/category/${category.slug}`}
+                        href={`/${category.slug}`}
                         target="_blank"
                         rel="noreferrer"
                         aria-label="View public page"

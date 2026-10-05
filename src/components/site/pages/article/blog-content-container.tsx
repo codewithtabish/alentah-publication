@@ -3,14 +3,8 @@
 // BlogContentContainer — ALENTAH
 //
 // The premium reading surface for every article.
-//
-// Responsibilities:
-//   - 100% width on small screens (zero reduction)
-//   - 84% width on large screens (16% narrower, cleaner edges)
-//   - Cap at a max width so huge monitors still read well
-//   - Provide generous vertical breathing room
-//   - Establish prose typography baseline
-//   - Smooth entry animation
+// Full-width by default. No fixed max-width caps.
+// The parent layout is responsible for horizontal sizing.
 // ============================================================
 
 import { cn } from "@/lib/utils";
@@ -23,35 +17,7 @@ import * as React from "react";
 interface BlogContentContainerProps
   extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
-
-  /**
-   * Optional. Controls the maximum width of the content.
-   *
-   *   "narrow"  → max-w-2xl   (672px)   → poems, short reads
-   *   "default" → max-w-4xl   (896px)   → normal articles
-   *   "wide"    → max-w-6xl   (1152px)  → rich articles
-   *   "full"    → max-w-7xl   (1280px)  → almost full width
-   */
-  width?: "narrow" | "default" | "wide" | "full";
 }
-
-// ============================================================
-// WIDTH PRESETS
-// ------------------------------------------------------------
-// "full" is the default — on large screens the container
-// is 84% of the available width (16% narrower) so it never
-// touches the screen edges.
-// ============================================================
-
-const WIDTH_CLASSES: Record<
-  NonNullable<BlogContentContainerProps["width"]>,
-  string
-> = {
-  narrow: "max-w-2xl",
-  default: "max-w-4xl",
-  wide: "max-w-6xl",
-  full: "max-w-7xl",
-};
 
 // ============================================================
 // COMPONENT
@@ -60,54 +26,28 @@ const WIDTH_CLASSES: Record<
 export function BlogContentContainer({
   children,
   className,
-  width = "full",
   ...props
 }: BlogContentContainerProps) {
   return (
     <div
       className={cn(
-        // ----------------------------------------------------------
-        // Layout — width
-        // ----------------------------------------------------------
-        "relative mx-auto",
-        "w-full", // ← small screens: full width (zero reduction)
-        "sm:w-[92%]", // ← tablet: slight inset
-        "lg:w-[84%]", // ← large screens: 16% narrower
-        WIDTH_CLASSES[width],
-        "min-w-0",
+        // Layout — full width, no max cap
+        "relative mx-auto min-w-0 w-full max-w-none",
 
-        // ----------------------------------------------------------
         // Vertical rhythm
-        // ----------------------------------------------------------
-        "py-10",
-        "sm:py-12",
-        "lg:py-16",
+        "py-8 sm:py-10 lg:py-12",
 
-        // ----------------------------------------------------------
-        // Horizontal breathing room
-        // ----------------------------------------------------------
-        "px-0",
-        "sm:px-1",
-        "lg:px-0",
-
-        // ----------------------------------------------------------
         // Reading experience
-        // ----------------------------------------------------------
-        "text-foreground",
-        "antialiased",
+        "text-foreground antialiased",
 
-        // ----------------------------------------------------------
         // Smooth entry
-        // ----------------------------------------------------------
         "animate-in fade-in-0 duration-500",
 
         className,
       )}
       {...props}
     >
-      {/* ============================================================
-          SUBTLE TOP FADE
-          ============================================================ */}
+      {/* Subtle top glow */}
       <div
         aria-hidden="true"
         className={cn(
@@ -119,10 +59,7 @@ export function BlogContentContainer({
         )}
       />
 
-      {/* ============================================================
-          CONTENT
-          ============================================================ */}
-      <div className="relative z-10">{children}</div>
+      <div className="relative z-10 w-full">{children}</div>
     </div>
   );
 }

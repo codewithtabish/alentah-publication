@@ -7,8 +7,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-import { getCategories } from "@/actions/category/get-categories";
 import { CreateArticleForm } from "@/components/site/admim/article/create-article-form";
+import { getCategories } from "@/actions/category/get-categories";
 
 export const metadata = {
   title: "New Article — Alentah Admin",

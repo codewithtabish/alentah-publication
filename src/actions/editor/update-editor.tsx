@@ -11,6 +11,7 @@ import {
   revalidateEditor,
   revalidateEditors,
   revalidateDashboardSection,
+  revalidateHome,
 } from "@/lib/cache-keys";
 import { uploadEditorAction } from "../images/upload-editor-image-action";
 
@@ -216,9 +217,21 @@ export async function updateEditor(
     const slug = toSlug(editor.name);
 
     // ─── Invalidate caches ───
+    //
+    // Because the editor's name and avatar appear on the homepage
+    // (author bylines on hero / cards / trending), we must also
+    // revalidate the homepage and the "homeblogs" tag.
+
     revalidateEditor(editor.id, slug);
     revalidateEditors();
     revalidateDashboardSection("editors");
+
+    // ─── Homepage + homeblogs ───
+    // This covers:
+    //   • CACHE_TAGS.home       ("homeblogs")
+    //   • CACHE_TAGS.homeScreen ("home:screen")
+    //   • revalidatePath("/")
+    revalidateHome();
 
     console.log("[updateEditor] Success:", editor.id);
 

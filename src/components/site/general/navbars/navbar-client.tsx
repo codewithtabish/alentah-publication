@@ -2,8 +2,10 @@
 
 // ============================================================
 // Navbar — ALENTAH (Client)
-// Floating editorial masthead. HIDDEN on /admin routes.
-// Categories come from getCategories() (existing action).
+// Floating editorial masthead. Always visible on scroll.
+// Plain surface, no shadow, no scrolled state changes.
+// Animated hamburger → X icon trigger on the left.
+// HIDDEN on /admin routes.
 // ============================================================
 
 import * as React from "react";
@@ -11,8 +13,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Search,
-  Menu,
-  X,
   LogOut,
   Bookmark,
   User as UserIcon,
@@ -61,12 +61,12 @@ export function NavbarClient({ categories }: NavbarClientProps) {
   const pathname = usePathname();
   const { user } = useUser();
   const { signOut } = useClerk();
-  const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
-  const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  const [menuOpen, setMenuOpen] = React.useState(false);
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
-  const [scrolled, setScrolled] = React.useState(false);
 
   const userMenuRef = React.useRef<HTMLDivElement>(null);
+  const lineMenuRef = React.useRef<HTMLDivElement>(null);
 
   const role = (user?.publicMetadata as { role?: string } | undefined)?.role;
   const isAdmin = role === "ADMIN";
@@ -86,26 +86,52 @@ export function NavbarClient({ categories }: NavbarClientProps) {
     [categories],
   );
 
+  // ---------------------------------------------------------
+  // Close menus on route change
+  // ---------------------------------------------------------
   React.useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 12);
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  React.useEffect(() => {
-    setMobileOpen(false);
-    setOpenDropdown(null);
+    setMenuOpen(false);
     setUserMenuOpen(false);
   }, [pathname]);
 
+  // ---------------------------------------------------------
+  // Close line menu on outside click
+  // ---------------------------------------------------------
   React.useEffect(() => {
-    document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [mobileOpen]);
+    if (!menuOpen) return;
 
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (
+        lineMenuRef.current &&
+        target &&
+        !lineMenuRef.current.contains(target)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [menuOpen]);
+
+  // ---------------------------------------------------------
+  // Close line menu on Escape
+  // ---------------------------------------------------------
+  React.useEffect(() => {
+    if (!menuOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
+
+  // ---------------------------------------------------------
+  // Close user menu on outside click
+  // ---------------------------------------------------------
   React.useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (
@@ -121,6 +147,23 @@ export function NavbarClient({ categories }: NavbarClientProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [userMenuOpen]);
 
+  // ---------------------------------------------------------
+  // Lock body scroll while the panel is open on small screens
+  // ---------------------------------------------------------
+  React.useEffect(() => {
+    const isSmall =
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 640px)").matches;
+
+    document.body.style.overflow = menuOpen && isSmall ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
+  // ---------------------------------------------------------
+  // Admin route → no navbar
+  // ---------------------------------------------------------
   if (isAdminRoute) {
     return null;
   }
@@ -129,115 +172,247 @@ export function NavbarClient({ categories }: NavbarClientProps) {
     <>
       <header
         className={cn(
-          "fixed left-1/2 -translate-x-1/2 z-50",
+          "fixed left-1/2 z-50 -translate-x-1/2 top-4",
           "w-[calc(100%-2rem)] max-w-[1400px]",
-          "transition-all duration-500 ease-out",
-          scrolled
-            ? "top-3 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.18)] dark:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.6)]"
-            : "top-4 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.10)] dark:shadow-[0_4px_24px_-8px_rgba(0,0,0,0.4)]",
         )}
       >
         <div
           className={cn(
-            "relative overflow-visible rounded-full",
-            "border border-border/60",
-            "transition-all duration-500",
-            "backdrop-blur-xl backdrop-saturate-150",
-            scrolled ? "bg-background/85" : "bg-background/70",
-            "before:absolute before:inset-0 before:rounded-full before:pointer-events-none",
-            "before:bg-[radial-gradient(ellipse_80%_120%_at_50%_-20%,color-mix(in_oklab,var(--primary)_8%,transparent),transparent_70%)]",
-            "dark:before:bg-[radial-gradient(ellipse_80%_120%_at_50%_-20%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent_70%)]",
+            "relative overflow-visibles",
+            "",
+            "  ",
           )}
         >
-          <div
-            aria-hidden
-            className="absolute inset-x-8 bottom-0 h-px bg-linear-to-r from-transparent via-primary/60 to-transparent"
-          />
-
-          <div className="relative flex h-14 items-center justify-between gap-3 px-3 sm:px-5">
-            {/* LEFT: WORDMARK */}
-            <Link
-              href="/"
-              aria-label="ALENTAH — Home"
-              className="group flex shrink-0 items-center pl-2"
+          <div className="relative flex h-14 items-center justify-between gap-2 px-3 sm:px-4">
+            {/* ============================================================
+                LEFT — icon trigger + brand
+                ============================================================ */}
+            <div
+              ref={lineMenuRef}
+              className="relative flex items-center gap-2.5 pl-1"
             >
-              <span
+              {/* Icon trigger — animated hamburger */}
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-expanded={menuOpen}
+                aria-controls="navbar-line-menu"
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
                 className={cn(
-                  "font-serif text-xl sm:text-2xl tracking-tight text-foreground",
-                  "transition-colors duration-300 group-hover:text-primary",
+                  "group relative inline-flex h-9 w-9 items-center justify-center rounded-full",
+                  "text-foreground/80",
+                  "transition-colors duration-300",
+                  "hover:bg-muted/50 hover:text-primary",
+                  "focus-visible:outline-none focus-visible:ring-2",
+                  "focus-visible:ring-primary/40 focus-visible:ring-offset-2",
+                  "focus-visible:ring-offset-background",
+                  menuOpen && "bg-muted/50 text-primary",
                 )}
               >
-                ALENTAH
-              </span>
-            </Link>
-
-            {/* CENTER: DESKTOP NAV */}
-            <nav className="hidden lg:flex flex-1 items-center justify-center gap-1">
-              {visibleCategories.map((item) => {
-                const href = `/category/${item.slug}`;
-                const isActive = pathname.startsWith(href);
-                const hasChildren = item.subcategories.length > 0;
-
-                return (
-                  <div
-                    key={item.id}
-                    className="relative"
-                    onMouseEnter={() =>
-                      hasChildren && setOpenDropdown(item.id)
-                    }
-                    onMouseLeave={() => hasChildren && setOpenDropdown(null)}
-                  >
-                    <Link
-                      href={href}
-                      className={cn(
-                        "relative inline-flex items-center whitespace-nowrap",
-                        "px-3 py-2 rounded-full",
-                        "text-[11px] font-medium uppercase tracking-[0.16em]",
-                        "transition-all duration-200",
-                        isActive
-                          ? "text-primary"
-                          : "text-foreground/70 hover:text-foreground",
-                        "hover:bg-accent",
-                      )}
-                    >
-                      {item.name}
-                    </Link>
-
-                    {hasChildren && openDropdown === item.id && (
-                      <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3">
-                        <div
-                          className={cn(
-                            "min-w-[220px] overflow-hidden",
-                            "border border-border bg-popover/95 backdrop-blur-xl rounded-2xl",
-                            "shadow-[0_20px_40px_-16px_rgba(0,0,0,0.18)]",
-                          )}
-                        >
-                          <ul className="py-2">
-                            {item.subcategories.map((child) => (
-                              <li key={child.id}>
-                                <Link
-                                  href={`/category/${item.slug}/${child.slug}`}
-                                  className={cn(
-                                    "block px-4 py-2 mx-1 rounded-lg",
-                                    "text-[13px] text-popover-foreground/80",
-                                    "hover:bg-accent hover:text-foreground",
-                                    "transition-colors duration-150",
-                                  )}
-                                >
-                                  {child.name}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
+                <span
+                  aria-hidden="true"
+                  className="relative block h-[14px] w-[18px]"
+                >
+                  {/* Top line */}
+                  <span
+                    className={cn(
+                      "absolute left-0 block h-[1.75px] w-full rounded-full bg-current",
+                      "transition-all duration-300 ease-out",
+                      "top-0",
+                      menuOpen && "top-1/2 -translate-y-1/2 rotate-45",
                     )}
-                  </div>
-                );
-              })}
-            </nav>
+                  />
 
-            {/* RIGHT: ACTIONS */}
+                  {/* Middle line */}
+                  <span
+                    className={cn(
+                      "absolute top-1/2 block h-[1.75px] rounded-full bg-current",
+                      "transition-all duration-300 ease-out",
+                      "-translate-y-1/2",
+                      menuOpen
+                        ? "left-1/2 w-0 opacity-0"
+                        : "left-0 w-3/4 opacity-100",
+                    )}
+                  />
+
+                  {/* Bottom line */}
+                  <span
+                    className={cn(
+                      "absolute left-0 block h-[1.75px] w-full rounded-full bg-current",
+                      "transition-all duration-300 ease-out",
+                      "bottom-0",
+                      menuOpen && "bottom-1/2 translate-y-1/2 -rotate-45",
+                    )}
+                  />
+                </span>
+              </button>
+
+              {/* BRAND — ALENTAH */}
+              <Link
+                href="/"
+                aria-label="ALENTAH — Home"
+                className="group flex shrink-0 items-baseline gap-1"
+              >
+                <span
+                  className={cn(
+                    "font-serif text-lg sm:text-xl md:text-2xl",
+                    "tracking-[0.04em] text-foreground",
+                    "transition-colors duration-300",
+                    "group-hover:text-primary",
+                  )}
+                >
+                  ALENTAH
+                </span>
+
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "block size-1 rounded-full bg-primary",
+                    "transition-all duration-300",
+                    "group-hover:scale-125",
+                  )}
+                />
+              </Link>
+
+              {/* FLOATING CATEGORY PANEL */}
+              <div
+                id="navbar-line-menu"
+                role="region"
+                aria-label="Categories"
+                className={cn(
+                  "absolute left-0 top-full z-50 mt-4 origin-top-left",
+                  "transition-all duration-300 ease-out",
+                  menuOpen
+                    ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
+                    : "pointer-events-none translate-y-1 scale-[0.98] opacity-0",
+                )}
+              >
+                <nav
+                  className={cn(
+                    "w-[280px] overflow-hidden rounded-2xl",
+                    "border border-border bg-background/95",
+                    "shadow-[0_24px_60px_-20px_rgba(0,0,0,0.5)]",
+                    "backdrop-blur-xl backdrop-saturate-150",
+                    "sm:w-xs",
+                  )}
+                >
+                  {/* Header */}
+                  <div className="border-b border-border/70 px-4 pb-3 pt-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
+                        Browse
+                      </p>
+
+                      <span className="rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
+                        {visibleCategories.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Items */}
+                  <ul className="max-h-[calc(100vh-14rem)] overflow-y-auto p-2">
+                    {visibleCategories.length === 0 ? (
+                      <li className="px-3 py-3 text-sm text-muted-foreground">
+                        No categories yet.
+                      </li>
+                    ) : (
+                      visibleCategories.map((item, index) => {
+                        const number = String(index + 1).padStart(2, "0");
+                        const href = `/${item.slug}`;
+                        const isActive = pathname.startsWith(href);
+
+                        return (
+                          <li
+                            key={item.id}
+                            className={cn(
+                              "transition-all duration-300 ease-out",
+                              menuOpen
+                                ? "translate-y-0 opacity-100"
+                                : "translate-y-1 opacity-0",
+                            )}
+                            style={{
+                              transitionDelay: menuOpen
+                                ? `${50 + index * 35}ms`
+                                : "0ms",
+                            }}
+                          >
+                            <Link
+                              href={href}
+                              onClick={() => setMenuOpen(false)}
+                              className={cn(
+                                "group flex items-center gap-3 rounded-xl",
+                                "px-3 py-2.5",
+                                "transition-colors duration-200",
+                                "hover:bg-muted/50",
+                                "focus-visible:outline-none focus-visible:bg-muted/50",
+                                isActive && "bg-muted/40",
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  "text-[11px] font-semibold tabular-nums",
+                                  "transition-colors duration-200",
+                                  isActive
+                                    ? "text-primary"
+                                    : "text-muted-foreground/60 group-hover:text-primary",
+                                )}
+                              >
+                                {number}
+                              </span>
+
+                              <span
+                                className={cn(
+                                  "flex-1 truncate text-sm font-medium",
+                                  isActive
+                                    ? "text-primary"
+                                    : "text-foreground",
+                                )}
+                              >
+                                {item.name}
+                              </span>
+
+                              <span
+                                aria-hidden="true"
+                                className={cn(
+                                  "block h-px w-0 bg-primary",
+                                  "transition-all duration-300 ease-out",
+                                  "group-hover:w-5",
+                                )}
+                              />
+                            </Link>
+
+                            {item.subcategories.length > 0 && (
+                              <ul className="mb-1 ml-4 border-l border-border/60 pl-3">
+                                {item.subcategories.map((child) => (
+                                  <li key={child.id}>
+                                    <Link
+                                      href={`/${item.slug}?sub=${child.slug}`}
+                                      onClick={() => setMenuOpen(false)}
+                                      className={cn(
+                                        "block rounded-lg px-2 py-1.5",
+                                        "text-[12.5px] text-muted-foreground",
+                                        "transition-colors duration-150",
+                                        "hover:text-foreground hover:bg-muted/40",
+                                      )}
+                                    >
+                                      {child.name}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
+                        );
+                      })
+                    )}
+                  </ul>
+                </nav>
+              </div>
+            </div>
+
+            {/* ============================================================
+                RIGHT — actions
+                ============================================================ */}
             <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
               <button
                 type="button"
@@ -408,145 +583,9 @@ export function NavbarClient({ categories }: NavbarClientProps) {
                   )}
                 </div>
               </Show>
-
-              <button
-                type="button"
-                aria-label={mobileOpen ? "Close menu" : "Open menu"}
-                aria-expanded={mobileOpen}
-                onClick={() => setMobileOpen((v) => !v)}
-                className={cn(
-                  "inline-flex lg:hidden h-9 w-9 items-center justify-center rounded-full",
-                  "text-foreground hover:text-primary hover:bg-accent",
-                  "transition-colors duration-200",
-                )}
-              >
-                {mobileOpen ? (
-                  <X className="h-5 w-5" strokeWidth={1.75} />
-                ) : (
-                  <Menu className="h-5 w-5" strokeWidth={1.75} />
-                )}
-              </button>
             </div>
           </div>
         </div>
-
-        {/* MOBILE MENU */}
-        {mobileOpen && (
-          <div
-            className={cn(
-              "lg:hidden mt-3 overflow-hidden",
-              "bg-background/85 backdrop-blur-xl backdrop-saturate-150",
-              "border border-border/60 rounded-3xl",
-              "shadow-[0_20px_60px_-20px_rgba(0,0,0,0.25)]",
-              "max-h-[calc(100vh-8rem)] overflow-y-auto",
-              "relative",
-              "before:absolute before:inset-0 before:pointer-events-none before:rounded-3xl",
-              "before:bg-[radial-gradient(ellipse_80%_120%_at_50%_-20%,color-mix(in_oklab,var(--primary)_6%,transparent),transparent_70%)]",
-              "dark:before:bg-[radial-gradient(ellipse_80%_120%_at_50%_-20%,color-mix(in_oklab,var(--primary)_14%,transparent),transparent_70%)]",
-            )}
-          >
-            <div className="relative px-5 py-4">
-              <ul className="flex flex-col">
-                {visibleCategories.map((item, idx) => {
-                  const href = `/category/${item.slug}`;
-                  const isActive = pathname.startsWith(href);
-
-                  return (
-                    <li
-                      key={item.id}
-                      className="border-b border-border/60 last:border-b-0"
-                    >
-                      <Link
-                        href={href}
-                        className={cn(
-                          "flex items-baseline justify-between py-3.5",
-                          "text-base font-serif tracking-tight",
-                          isActive
-                            ? "text-primary"
-                            : "text-foreground hover:text-primary",
-                          "transition-colors duration-200",
-                        )}
-                      >
-                        <span>{item.name}</span>
-                        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                          {String(idx + 1).padStart(2, "0")}
-                        </span>
-                      </Link>
-
-                      {item.subcategories.length > 0 && (
-                        <ul className="pb-3 pl-4 flex flex-col gap-1.5 border-l border-border ml-1">
-                          {item.subcategories.map((child) => (
-                            <li key={child.id}>
-                              <Link
-                                href={`/category/${item.slug}/${child.slug}`}
-                                className="block text-[13px] text-muted-foreground hover:text-foreground transition-colors"
-                              >
-                                {child.name}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-
-              <div className="mt-5 flex flex-col gap-2">
-                <Show when="signed-out">
-                  <SignInButton
-                    mode="modal"
-                    forceRedirectUrl="/"
-                    signUpForceRedirectUrl="/"
-                  >
-                    <button
-                      type="button"
-                      className={cn(
-                        "inline-flex h-11 items-center justify-center rounded-full",
-                        "border border-primary bg-transparent text-primary",
-                        "text-[11px] font-semibold uppercase tracking-[0.18em]",
-                        "hover:bg-primary hover:text-primary-foreground",
-                        "transition-colors duration-200",
-                      )}
-                    >
-                      Login
-                    </button>
-                  </SignInButton>
-                </Show>
-
-                <Show when="signed-in">
-                  <Link
-                    href="/profile"
-                    className={cn(
-                      "inline-flex h-11 items-center justify-center gap-2 rounded-full",
-                      "border border-border text-foreground",
-                      "text-[11px] font-semibold uppercase tracking-[0.18em]",
-                      "hover:bg-accent transition-colors",
-                    )}
-                  >
-                    <UserIcon className="h-4 w-4" />
-                    Profile
-                  </Link>
-
-                  {isAdmin && (
-                    <Link
-                      href="/admin"
-                      className={cn(
-                        "inline-flex h-11 items-center justify-center gap-2 rounded-full",
-                        "border border-primary bg-primary/10 text-primary",
-                        "text-[11px] font-semibold uppercase tracking-[0.18em]",
-                        "hover:bg-primary/15 transition-colors",
-                      )}
-                    >
-                      <ShieldIcon className="h-4 w-4" />
-                      Admin
-                    </Link>
-                  )}
-                </Show>
-              </div>
-            </div>
-          </div>
-        )}
       </header>
 
       <div aria-hidden className="h-24" />
@@ -563,9 +602,18 @@ export function NavbarSkeleton() {
     <>
       <div
         aria-hidden
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-[1400px]"
+        className="fixed top-4 left-1/2 z-50 w-[calc(100%-2rem)] max-w-[1400px] -translate-x-1/2"
       >
-        <div className="h-14 rounded-full border border-border/60 bg-background/70 backdrop-blur-xl" />
+        <div className="flex h-14 items-center justify-between gap-2 rounded-full border border-border/60 bg-background/70 px-3 backdrop-blur-xl sm:px-4">
+          <div className="flex items-center gap-2.5 pl-1">
+            <div className="size-9 rounded-full bg-muted" />
+            <div className="h-4 w-20 rounded bg-muted" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="size-8 rounded-full bg-muted" />
+            <div className="h-8 w-16 rounded-full bg-muted" />
+          </div>
+        </div>
       </div>
       <div aria-hidden className="h-24" />
     </>

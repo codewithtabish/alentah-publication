@@ -383,3 +383,82 @@ textarea::-webkit-scrollbar,
   height: 0;
   background: transparent;
 }
+
+
+
+
+/* ============================================================
+   GLOBAL IMAGE EDGE FIX — ALENTAH
+   Eliminates the light "reflection" edge on images in dark mode.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. All images — kill anti-aliasing edge artifact
+   ------------------------------------------------------------ */
+img {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  image-rendering: -webkit-optimize-contrast;
+  transform: translateZ(0);
+  filter: brightness(1);
+}
+
+/* ------------------------------------------------------------
+   2. High-DPI devices (smartphones, tablets, retina)
+   ------------------------------------------------------------ */
+@media (min-resolution: 1.1dppx) {
+  img {
+    outline: solid 1px transparent;
+  }
+}
+
+/* ------------------------------------------------------------
+   3. Next.js Image wrapper containers
+   ------------------------------------------------------------ */
+[data-nextjs-image-wrapper],
+.relative.overflow-hidden {
+  isolation: isolate;
+  contain: paint;
+}
+
+/* ------------------------------------------------------------
+   4a. Dark mode via prefers-color-scheme
+   ------------------------------------------------------------ */
+@media (prefers-color-scheme: dark) {
+  img {
+    outline: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* ------------------------------------------------------------
+   4b. Dark mode via .dark class (next-themes)
+   ------------------------------------------------------------ */
+.dark img {
+  outline: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ------------------------------------------------------------
+   5. Safari 15+ — prevents grey border on load
+   ------------------------------------------------------------ */
+@supports (font: -apple-system-body) and (-webkit-appearance: none) {
+  img[loading="lazy"] {
+    clip-path: inset(0.6px);
+  }
+}
+
+/* ------------------------------------------------------------
+   6. Firefox — prevents white background flash on load
+   ------------------------------------------------------------ */
+@-moz-document url-prefix() {
+  img {
+    filter: brightness(1);
+  }
+}
+
+
+
+@media (prefers-color-scheme: dark) {
+  img {
+    background-color: transparent;
+  }
+}

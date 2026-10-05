@@ -1,7 +1,11 @@
 // src/app/(site)/[category]/[slug]/page.tsx
 // ============================================================
-// Article Page — no subcategory
+// Article Page — two-column reading layout
 // URL: /category/slug
+//
+// Layout:
+//   Mobile  → single column, TOC collapses above the article
+//   Desktop → [content 1fr] [TOC 280px]  (TOC on the RIGHT)
 // ============================================================
 
 import { Suspense } from "react";
@@ -10,14 +14,13 @@ import type { Metadata } from "next";
 
 import { getArticleBySlug } from "@/actions/blog/get-article-by-slug";
 
-
 // import TheDaily from "@/components/blog/the-daily";
 
 import type { TableOfContentsItem } from "@/schemas/blog-schema";
 import { ArticlePageSkeleton } from "@/components/site/pages/article/article-page-view";
 import BlogHeader from "@/components/site/pages/article/single-blog-header";
-import { BlogContentContainer } from "@/components/site/pages/article/blog-content-container";
 import { BlogPreviewer } from "@/components/site/admim/article/artcile-previewer";
+import { ArticleTOC } from "@/components/site/pages/article/article-toc";
 
 // ============================================================
 // TYPES
@@ -119,15 +122,10 @@ async function ArticleContent({
 }) {
   const { category, slug } = await params;
 
-  const decodedCategory =
-    decodeURIComponent(category);
+  const decodedCategory = decodeURIComponent(category);
+  const decodedSlug = decodeURIComponent(slug);
 
-  const decodedSlug =
-    decodeURIComponent(slug);
-
-  const result = await getArticleBySlug(
-    decodedSlug,
-  );
+  const result = await getArticleBySlug(decodedSlug);
 
   // Real 404: article not in DB
   if (!result.success) {
@@ -149,9 +147,19 @@ async function ArticleContent({
     );
   }
 
+  const tocItems: TableOfContentsItem[] = Array.isArray(
+    blog.tableOfContents,
+  )
+    ? (blog.tableOfContents as TableOfContentsItem[])
+    : [];
+
   return (
-    <main>
+    <main className="w-full">
+      {/* =====================================================
+          HERO HEADER (full-width)
+      ====================================================== */}
       <BlogHeader
+      
         title={blog.title}
         shortDescription={blog.shortDescription}
         publishedAt={blog.publishedAt}
@@ -161,32 +169,58 @@ async function ArticleContent({
         bannerImageAlt={blog.bannerImageAlt}
         author={blog.author}
         category={blog.category}
-        subcategory={
-          blog.subcategory ?? blog.category
-        }
+        subcategory={blog.subcategory ?? blog.category}
       />
 
-      <BlogContentContainer>
-        <BlogPreviewer
-          content={blog.content}
-          tableOfContents={
-            Array.isArray(blog.tableOfContents)
-              ? (blog.tableOfContents as TableOfContentsItem[])
-              : undefined
-          }
-        />
+      {/* =====================================================
+          READING GRID
+            mobile  → 1 column (TOC above body)
+            lg+     → [content 1fr] [toc 280px]  (TOC right)
+      ====================================================== */}
+      <div className="mx-auto w-full max-w-[1440px] px-4 pb-16 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24 xl:px-10">
+        <div
+          className={[
+            "grid w-full gap-8 lg:gap-10 xl:gap-14",
+            "grid-cols-1",
+            "lg:grid-cols-[minmax(0,1fr)_280px]",
+            "xl:grid-cols-[minmax(0,1fr)_300px]",
+            "lg:items-start",
+          ].join(" ")}
+        >
+          {/* =================================================
+              ARTICLE BODY  (left column on lg+)
+          ================================================= */}
+          <div className="order-2 min-w-0 w-full lg:order-1">
+            <article className="relative min-w-0 w-full max-w-none">
+              <BlogPreviewer
+                content={blog.content}
+                tableOfContents={undefined}
+              />
 
-        <hr />
+              <hr className="my-10 border-border sm:my-12" />
 
-        {/* <Suspense fallback={<BlogCommentsSkeleton />}>
-          <BlogComments
-            blogId={blog.id}
-            blogSlug={blog.slug}
+              {/* <Suspense fallback={<BlogCommentsSkeleton />}>
+                <BlogComments
+                  blogId={blog.id}
+                  blogSlug={blog.slug}
+                />
+              </Suspense>
+
+              <TheDaily /> */}
+            </article>
+          </div>
+
+          {/* =================================================
+              TABLE OF CONTENTS
+                mobile → above body (order-1)
+                lg+    → sticky right sidebar (order-2)
+          ================================================= */}
+          <ArticleTOC
+            items={tocItems}
+            className="order-1 w-full lg:order-2 lg:sticky lg:top-24"
           />
-        </Suspense>
-
-        <TheDaily /> */}
-      </BlogContentContainer>
+        </div>
+      </div>
     </main>
   );
 }

@@ -3,6 +3,9 @@
 // ============================================================
 // Articles Table — ALENTAH Admin
 // Matches the mockup exactly.
+//
+// Types come from the server action (single source of truth):
+//   AdminArticleRow, AdminArticleStats
 // ============================================================
 
 import * as React from "react";
@@ -14,30 +17,26 @@ import {
   Pencil,
   Trash2,
   Eye,
-  Plus,
-  Upload,
   LayoutGrid,
   List,
   AlertTriangle,
   Loader2,
-  X,
-  Check,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { deleteArticle } from "@/actions/blog/delete-article";
 import type {
-  ArticleListItem,
-  ArticleStats,
-} from "@/actions/blog/get-articles";
+  AdminArticleRow,
+  AdminArticleStats,
+} from "@/actions/blog/get-admin-articles";
 
 // ============================================================
 // TYPES
 // ============================================================
 
 interface ArticlesTableProps {
-  articles: ArticleListItem[];
-  stats: ArticleStats;
+  articles: AdminArticleRow[];
+  stats: AdminArticleStats;
   total: number;
 }
 
@@ -55,7 +54,7 @@ export function ArticlesTable({
   const [activeFilter, setActiveFilter] = React.useState<string>("All");
   const [view, setView] = React.useState<"list" | "grid">("list");
   const [deleteTarget, setDeleteTarget] =
-    React.useState<ArticleListItem | null>(null);
+    React.useState<AdminArticleRow | null>(null);
 
   // Filter articles
   const filtered = React.useMemo(() => {
@@ -144,7 +143,7 @@ export function ArticlesTable({
               options={["All", "Article", "News", "Opinion"]}
             />
             <FilterSelect
-              label="Sort: Newest"
+              label="Sort"
               options={["Newest", "Oldest", "Most viewed"]}
             />
 
@@ -264,9 +263,11 @@ export function ArticlesTable({
                     >
                       {article.category.name}
                     </p>
-                    <p className="mt-1 text-[10px] text-muted-foreground truncate">
-                      {article.subcategory.name}
-                    </p>
+                    {article.subcategory && (
+                      <p className="mt-1 text-[10px] text-muted-foreground truncate">
+                        {article.subcategory.name}
+                      </p>
+                    )}
                   </div>
 
                   {/* Author */}
@@ -314,7 +315,9 @@ export function ArticlesTable({
                   {/* Date */}
                   <span className="text-[11px] text-muted-foreground">
                     {formatDate(
-                      article.publishedAt ?? article.scheduledAt ?? article.updatedAt,
+                      article.publishedAt ??
+                        article.scheduledAt ??
+                        article.updatedAt,
                     )}
                   </span>
 
@@ -542,6 +545,7 @@ function FilterSelect({
 }) {
   return (
     <select
+      aria-label={label}
       className={cn(
         "h-8 rounded-lg border border-border bg-background px-2.5",
         "text-[11px] text-foreground cursor-pointer",
@@ -575,7 +579,7 @@ function DeleteArticleDialog({
   onClose,
   onDeleted,
 }: {
-  article: ArticleListItem;
+  article: AdminArticleRow;
   onClose: () => void;
   onDeleted: () => void;
 }) {
@@ -641,7 +645,10 @@ function DeleteArticleDialog({
         className="mx-4 w-full max-w-md rounded-3xl border border-border bg-background p-6 shadow-2xl sm:p-8"
       >
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
-          <AlertTriangle className="h-6 w-6 text-destructive" strokeWidth={1.75} />
+          <AlertTriangle
+            className="h-6 w-6 text-destructive"
+            strokeWidth={1.75}
+          />
         </div>
 
         <h2 className="text-center font-serif text-2xl tracking-tight">

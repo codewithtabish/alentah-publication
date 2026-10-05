@@ -19,7 +19,16 @@ export type HomeBlogCard = {
   viewCount: number;
   featured: boolean;
   publishedAt: Date | null;
-  category: { id: string; name: string; slug: string };
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+    editor: {
+      id: string;
+      name: string;
+      imageUrl: string | null;
+    } | null;
+  };
   subcategory: { id: string; name: string; slug: string };
   author: {
     id: string;
@@ -61,8 +70,23 @@ async function getCachedHomeBlogs(): Promise<HomeBlogCard[]> {
       viewCount: true,
       featured: true,
       publishedAt: true,
-      category: { select: { id: true, name: true, slug: true } },
-      subcategory: { select: { id: true, name: true, slug: true } },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          editor: {
+            select: {
+              id: true,
+              name: true,
+              imageUrl: true,
+            },
+          },
+        },
+      },
+      subcategory: {
+        select: { id: true, name: true, slug: true },
+      },
       author: {
         select: {
           id: true,
