@@ -3,6 +3,7 @@
 import { TableOfContentsItem } from "@/schemas/blog-schema";
 import Image from "next/image";
 import React, { useEffect, useMemo, useState } from "react";
+
 import CodeBlockSwitcher from "../../admim/article/code-article-switcher";
 
 type Props = {
@@ -90,7 +91,8 @@ const CodeBlock: React.FC<{
     cs: "C#",
   };
 
-  const languageLabel = languageLabels[normalizedLanguage] || language;
+  const languageLabel =
+    languageLabels[normalizedLanguage] || language;
 
   const handleCopy = async () => {
     try {
@@ -230,9 +232,11 @@ function getTableOfContentsItemData(item: TableOfContentsItem) {
     level?: number;
   };
 
-  const title = tocItem.title || tocItem.text || tocItem.label || "";
+  const title =
+    tocItem.title || tocItem.text || tocItem.label || "";
 
-  const rawId = tocItem.slug || tocItem.id || tocItem.href || "";
+  const rawId =
+    tocItem.slug || tocItem.id || tocItem.href || "";
 
   const id = rawId.replace(/^#/, "").trim();
 
@@ -246,67 +250,72 @@ function getTableOfContentsItemData(item: TableOfContentsItem) {
 /* =========================================================
    HEADING CLASSES
    ---------------------------------------------------------
-   Mobile-first scale — small on phones, grows on larger
-   screens. Headings inside the article should feel like
-   section markers, not poster titles.
+   Compact editorial heading scale.
+
+   H1: 18px → 20px → 24px → 28px
+   H2: 17px → 19px → 22px → 25px
+   H3: 15px → 17px → 19px → 21px
+   H4: 14px → 15px → 17px → 18px
+   H5: 13px → 14px → 15px
+   H6: 12px → 13px → 14px
    ========================================================= */
 
 const HEADING_CLASSES: Record<number, string> = {
   1: [
     "scroll-mt-24",
-    "mt-8 mb-3",
-    "text-[1.375rem] leading-[1.25] font-bold tracking-[-0.02em]", // 22px
-    "sm:mt-10 sm:mb-4 sm:text-2xl sm:leading-[1.2]", // 24px
-    "md:mt-12 md:text-[1.75rem] md:leading-[1.15]", // 28px
-    "lg:text-3xl", // 30px
+    "mt-7 mb-3",
+    "text-[1.125rem] leading-[1.3] font-bold tracking-[-0.015em]",
+    "sm:mt-8 sm:mb-3 sm:text-[1.25rem] sm:leading-[1.25]",
+    "md:mt-10 md:text-[1.5rem] md:leading-[1.2]",
+    "lg:text-[1.75rem]",
     "text-foreground [text-wrap:balance]",
   ].join(" "),
 
   2: [
     "scroll-mt-24",
-    "mt-7 mb-3",
-    "text-[1.25rem] leading-[1.3] font-bold tracking-[-0.015em]", // 20px
-    "sm:mt-9 sm:mb-3 sm:text-[1.375rem] sm:leading-[1.25]", // 22px
-    "md:mt-10 md:text-2xl md:leading-[1.2]", // 24px
-    "lg:text-[1.625rem]", // 26px
+    "mt-6 mb-2.5",
+    "text-[1.0625rem] leading-[1.35] font-bold tracking-[-0.01em]",
+    "sm:mt-7 sm:mb-3 sm:text-[1.1875rem] sm:leading-[1.3]",
+    "md:mt-9 md:text-[1.375rem] md:leading-[1.25]",
+    "lg:text-[1.5625rem]",
     "text-foreground [text-wrap:balance]",
   ].join(" "),
 
   3: [
     "scroll-mt-24",
-    "mt-6 mb-2.5",
-    "text-[1.0625rem] leading-[1.35] font-bold tracking-[-0.01em]", // 17px
-    "sm:mt-8 sm:mb-3 sm:text-[1.125rem] sm:leading-[1.3]", // 18px
-    "md:mt-9 md:text-xl md:leading-[1.25]", // 20px
-    "lg:text-[1.375rem]", // 22px
+    "mt-5 mb-2",
+    "text-[0.9375rem] leading-[1.4] font-bold tracking-normal",
+    "sm:mt-6 sm:mb-2.5 sm:text-[1.0625rem] sm:leading-[1.35]",
+    "md:mt-7 md:text-[1.1875rem] md:leading-[1.3]",
+    "lg:text-[1.3125rem]",
     "text-foreground [text-wrap:balance]",
   ].join(" "),
 
   4: [
     "scroll-mt-24",
-    "mt-5 mb-2",
-    "text-[1rem] leading-[1.4] font-semibold tracking-normal", // 16px
-    "sm:mt-6 sm:mb-2.5 sm:text-[1.0625rem] sm:leading-[1.35]", // 17px
-    "md:mt-7 md:text-[1.125rem]", // 18px
-    "lg:text-[1.1875rem]", // 19px
+    "mt-4 mb-2",
+    "text-[0.875rem] leading-[1.45] font-semibold tracking-normal",
+    "sm:mt-5 sm:mb-2 sm:text-[0.9375rem] sm:leading-[1.4]",
+    "md:mt-6 md:text-[1.0625rem]",
+    "lg:text-[1.125rem]",
     "text-foreground [text-wrap:balance]",
   ].join(" "),
 
   5: [
     "scroll-mt-24",
     "mt-4 mb-2",
-    "text-[0.9375rem] leading-[1.45] font-semibold tracking-normal", // 15px
-    "sm:mt-5 sm:text-[1rem] sm:leading-[1.4]", // 16px
-    "md:text-[1.0625rem]", // 17px
+    "text-[0.8125rem] leading-[1.5] font-semibold tracking-normal",
+    "sm:mt-4 sm:text-[0.875rem] sm:leading-[1.45]",
+    "md:text-[0.9375rem]",
     "text-foreground [text-wrap:balance]",
   ].join(" "),
 
   6: [
     "scroll-mt-24",
-    "mt-4 mb-2",
-    "text-[0.875rem] leading-[1.5] font-semibold uppercase tracking-[0.06em]", // 14px
-    "sm:text-[0.9375rem]", // 15px
-    "md:text-[1rem]", // 16px
+    "mt-3.5 mb-2",
+    "text-[0.75rem] leading-[1.5] font-semibold uppercase tracking-[0.06em]",
+    "sm:text-[0.8125rem]",
+    "md:text-[0.875rem]",
     "text-foreground [text-wrap:balance]",
   ].join(" "),
 };
@@ -319,8 +328,13 @@ export const BlogPreviewer: React.FC<Props> = ({
   content,
   tableOfContents = [],
 }) => {
-  const [openToggles, setOpenToggles] = useState<Record<string, boolean>>({});
-  const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
+  const [openToggles, setOpenToggles] = useState<
+    Record<string, boolean>
+  >({});
+
+  const [isTableOfContentsOpen, setIsTableOfContentsOpen] =
+    useState(false);
+
   const [activeSection, setActiveSection] = useState<string>("");
 
   /* =========================================================
@@ -341,7 +355,6 @@ export const BlogPreviewer: React.FC<Props> = ({
     if (typeof document === "undefined") return;
 
     const html = document.documentElement;
-
     const previousScrollBehavior = html.style.scrollBehavior;
 
     html.style.scrollBehavior = "smooth";
@@ -360,7 +373,9 @@ export const BlogPreviewer: React.FC<Props> = ({
 
     const headingElements = validTableOfContents
       .map((item) => document.getElementById(item.id))
-      .filter((element): element is HTMLElement => Boolean(element));
+      .filter(
+        (element): element is HTMLElement => Boolean(element),
+      );
 
     if (!headingElements.length) return;
 
@@ -369,7 +384,8 @@ export const BlogPreviewer: React.FC<Props> = ({
     const updateActiveSection = () => {
       const offset = 140;
 
-      let currentSection = headingElements[0]?.id || "";
+      let currentSection =
+        headingElements[0]?.id || "";
 
       for (const heading of headingElements) {
         const rect = heading.getBoundingClientRect();
@@ -382,7 +398,6 @@ export const BlogPreviewer: React.FC<Props> = ({
       }
 
       setActiveSection(currentSection);
-
       ticking = false;
     };
 
@@ -423,7 +438,6 @@ export const BlogPreviewer: React.FC<Props> = ({
     if (!target) return;
 
     setActiveSection(id);
-
     setIsTableOfContentsOpen(false);
 
     window.requestAnimationFrame(() => {
@@ -462,14 +476,22 @@ export const BlogPreviewer: React.FC<Props> = ({
      ========================================================= */
 
   const alertClasses: Record<string, string> = {
-    primary: "border-primary/30 bg-primary/10 text-foreground",
-    secondary: "border-border bg-muted text-foreground",
-    info: "border-primary/30 bg-primary/10 text-foreground",
-    success: "border-primary/30 bg-primary/10 text-foreground",
-    warning: "border-border bg-muted text-foreground",
-    danger: "border-destructive/30 bg-destructive/10 text-foreground",
-    light: "border-border bg-background text-foreground",
-    dark: "border-border bg-foreground text-background",
+    primary:
+      "border-primary/30 bg-primary/10 text-foreground",
+    secondary:
+      "border-border bg-muted text-foreground",
+    info:
+      "border-primary/30 bg-primary/10 text-foreground",
+    success:
+      "border-primary/30 bg-primary/10 text-foreground",
+    warning:
+      "border-border bg-muted text-foreground",
+    danger:
+      "border-destructive/30 bg-destructive/10 text-foreground",
+    light:
+      "border-border bg-background text-foreground",
+    dark:
+      "border-border bg-foreground text-background",
   };
 
   const alignClasses: Record<string, string> = {
@@ -498,7 +520,7 @@ export const BlogPreviewer: React.FC<Props> = ({
       <CodeBlockSwitcher />
 
       {/* =====================================================
-          TABLE OF CONTENTS (STICKY)
+          TABLE OF CONTENTS
           ===================================================== */}
 
       {validTableOfContents.length > 0 && (
@@ -513,7 +535,9 @@ export const BlogPreviewer: React.FC<Props> = ({
               aria-expanded={isTableOfContentsOpen}
               aria-controls="blog-table-of-contents"
               onClick={() =>
-                setIsTableOfContentsOpen((previous) => !previous)
+                setIsTableOfContentsOpen(
+                  (previous) => !previous,
+                )
               }
               className="group flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors duration-200 hover:bg-muted/40 sm:gap-4 sm:px-6 sm:py-4"
             >
@@ -531,7 +555,8 @@ export const BlogPreviewer: React.FC<Props> = ({
                     •{" "}
                     {
                       validTableOfContents.find(
-                        (item) => item.id === activeSection,
+                        (item) =>
+                          item.id === activeSection,
                       )?.title
                     }
                   </span>
@@ -543,11 +568,17 @@ export const BlogPreviewer: React.FC<Props> = ({
                   "flex h-8 w-8 shrink-0 items-center justify-center",
                   "rounded-full bg-muted text-muted-foreground",
                   "transition-transform duration-300",
-                  isTableOfContentsOpen ? "rotate-180" : "rotate-0",
+                  isTableOfContentsOpen
+                    ? "rotate-180"
+                    : "rotate-0",
                 ].join(" ")}
                 aria-hidden="true"
               >
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-4 w-4"
+                >
                   <path
                     d="m6 9 6 6 6-6"
                     stroke="currentColor"
@@ -572,53 +603,70 @@ export const BlogPreviewer: React.FC<Props> = ({
               <div className="min-h-0 overflow-hidden">
                 <div className="max-h-[60vh] overflow-y-auto border-t border-border bg-muted/10 px-2 py-2.5 sm:px-4 sm:py-4">
                   <div className="space-y-1">
-                    {validTableOfContents.map((item, index) => {
-                      const isActive = activeSection === item.id;
+                    {validTableOfContents.map(
+                      (item, index) => {
+                        const isActive =
+                          activeSection === item.id;
 
-                      return (
-                        <button
-                          key={`${item.id}-${index}`}
-                          type="button"
-                          onClick={(event) =>
-                            handleTableOfContentsClick(event, item.id)
-                          }
-                          aria-current={isActive ? "location" : undefined}
-                          style={{
-                            paddingLeft: `${Math.max(item.level - 2, 0) * 16 + 10}px`,
-                          }}
-                          className={[
-                            "group flex min-h-10 w-full items-center",
-                            "rounded-lg border px-3 py-2",
-                            "text-left text-sm leading-6",
-                            "transition-all duration-200",
-
-                            isActive
-                              ? "border-primary/20 bg-primary/10 text-primary"
-                              : "border-transparent text-muted-foreground hover:bg-background hover:text-foreground hover:shadow-sm",
-                          ].join(" ")}
-                        >
-                          <span
-                            className={[
-                              "mr-2.5 h-1.5 w-1.5 shrink-0 rounded-full",
-                              "transition-all duration-200",
-
+                        return (
+                          <button
+                            key={`${item.id}-${index}`}
+                            type="button"
+                            onClick={(event) =>
+                              handleTableOfContentsClick(
+                                event,
+                                item.id,
+                              )
+                            }
+                            aria-current={
                               isActive
-                                ? "bg-primary scale-125"
-                                : "bg-muted-foreground/40 group-hover:bg-primary",
-                            ].join(" ")}
-                          />
-
-                          <span
+                                ? "location"
+                                : undefined
+                            }
+                            style={{
+                              paddingLeft: `${
+                                Math.max(
+                                  item.level - 2,
+                                  0,
+                                ) *
+                                  16 +
+                                10
+                              }px`,
+                            }}
                             className={[
-                              "min-w-0 transition-colors",
-                              isActive ? "font-medium" : "",
+                              "group flex min-h-10 w-full items-center",
+                              "rounded-lg border px-3 py-2",
+                              "text-left text-sm leading-6",
+                              "transition-all duration-200",
+                              isActive
+                                ? "border-primary/20 bg-primary/10 text-primary"
+                                : "border-transparent text-muted-foreground hover:bg-background hover:text-foreground hover:shadow-sm",
                             ].join(" ")}
                           >
-                            {item.title}
-                          </span>
-                        </button>
-                      );
-                    })}
+                            <span
+                              className={[
+                                "mr-2.5 h-1.5 w-1.5 shrink-0 rounded-full",
+                                "transition-all duration-200",
+                                isActive
+                                  ? "bg-primary scale-125"
+                                  : "bg-muted-foreground/40 group-hover:bg-primary",
+                              ].join(" ")}
+                            />
+
+                            <span
+                              className={[
+                                "min-w-0 transition-colors",
+                                isActive
+                                  ? "font-medium"
+                                  : "",
+                              ].join(" ")}
+                            >
+                              {item.title}
+                            </span>
+                          </button>
+                        );
+                      },
+                    )}
                   </div>
                 </div>
               </div>
@@ -631,456 +679,526 @@ export const BlogPreviewer: React.FC<Props> = ({
           BLOG CONTENT
           ===================================================== */}
 
-      {content.blocks.map((block: any, index: number) => {
-        const type = block.type?.toLowerCase();
+      {content.blocks.map(
+        (block: any, index: number) => {
+          const type = block.type?.toLowerCase();
 
-        if (
-          type === "toc" ||
-          type === "tableofcontents" ||
-          type === "table-of-contents" ||
-          type === "table_of_contents"
-        ) {
-          return null;
-        }
-
-        switch (type) {
-          /* ===================================================
-             TOGGLE
-             =================================================== */
-
-          case "toggle": {
-            const isOpen =
-              openToggles[block.id] ?? block.data.status === "open";
-
-            if (!block.data.text && !block.data.itemsContent) {
-              return null;
-            }
-
-            return (
-              <div
-                key={index}
-                className="not-prose mb-5 overflow-hidden rounded-xl border border-border bg-card shadow-sm"
-              >
-                <button
-                  type="button"
-                  onClick={() => handleToggleClick(block.id)}
-                  className="flex w-full items-center justify-between gap-4 bg-muted/40 px-3 py-3 text-left font-semibold text-foreground transition-colors hover:bg-muted/60 sm:px-4"
-                >
-                  <span>{block.data.text}</span>
-
-                  <span
-                    className={[
-                      "shrink-0 transition-transform duration-200",
-                      isOpen ? "rotate-0" : "-rotate-90",
-                    ].join(" ")}
-                    aria-hidden="true"
-                  >
-                    ▼
-                  </span>
-                </button>
-
-                {isOpen && block.data.itemsContent && (
-                  <div
-                    className="px-3 py-4 text-foreground sm:px-4 [&_p]:text-justify [&_p]:[text-align-last:left] [&_p]:[hyphens:auto]"
-                    dangerouslySetInnerHTML={renderHTML(
-                      block.data.itemsContent,
-                    )}
-                  />
-                )}
-              </div>
-            );
+          if (
+            type === "toc" ||
+            type === "tableofcontents" ||
+            type === "table-of-contents" ||
+            type === "table_of_contents"
+          ) {
+            return null;
           }
 
-          /* ===================================================
-             ALERT
-             =================================================== */
+          switch (type) {
+            /* ===================================================
+               TOGGLE
+               =================================================== */
 
-          case "alert": {
-            if (!block.data) return null;
+            case "toggle": {
+              const isOpen =
+                openToggles[block.id] ??
+                block.data.status === "open";
 
-            const alertMessage = block.data.message?.trim();
+              if (
+                !block.data.text &&
+                !block.data.itemsContent
+              ) {
+                return null;
+              }
 
-            if (!alertMessage) return null;
+              return (
+                <div
+                  key={index}
+                  className="not-prose mb-5 overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleToggleClick(block.id)
+                    }
+                    className="flex w-full items-center justify-between gap-4 bg-muted/40 px-3 py-3 text-left font-semibold text-foreground transition-colors hover:bg-muted/60 sm:px-4"
+                  >
+                    <span>{block.data.text}</span>
 
-            const alertTitle =
-              block.data.title === "Be Attentivte"
-                ? "Be Attentive"
-                : block.data.title;
+                    <span
+                      className={[
+                        "shrink-0 transition-transform duration-200",
+                        isOpen
+                          ? "rotate-0"
+                          : "-rotate-90",
+                      ].join(" ")}
+                      aria-hidden="true"
+                    >
+                      ▼
+                    </span>
+                  </button>
 
-            const alertType = block.data.type || "warning";
+                  {isOpen &&
+                    block.data.itemsContent && (
+                      <div
+                        className="px-3 py-4 text-foreground sm:px-4 [&_p]:text-justify [&_p]:[text-align-last:left] [&_p]:[hyphens:auto]"
+                        dangerouslySetInnerHTML={renderHTML(
+                          block.data.itemsContent,
+                        )}
+                      />
+                    )}
+                </div>
+              );
+            }
 
-            const alertAlign = block.data.align || "left";
+            /* ===================================================
+               ALERT
+               =================================================== */
 
-            return (
-              <div
-                key={block.id || index}
-                className={[
-                  "not-prose mb-5 rounded-xl border p-3 sm:p-4",
-                  alertClasses[alertType] || alertClasses.warning,
-                  alignClasses[alertAlign],
-                ].join(" ")}
-              >
-                {alertTitle && (
+            case "alert": {
+              if (!block.data) return null;
+
+              const alertMessage =
+                block.data.message?.trim();
+
+              if (!alertMessage) return null;
+
+              const alertTitle =
+                block.data.title === "Be Attentivte"
+                  ? "Be Attentive"
+                  : block.data.title;
+
+              const alertType =
+                block.data.type || "warning";
+
+              const alertAlign =
+                block.data.align || "left";
+
+              return (
+                <div
+                  key={block.id || index}
+                  className={[
+                    "not-prose mb-5 rounded-xl border p-3 sm:p-4",
+                    alertClasses[alertType] ||
+                      alertClasses.warning,
+                    alignClasses[alertAlign],
+                  ].join(" ")}
+                >
+                  {alertTitle && (
+                    <strong className="mb-1 block font-semibold">
+                      {alertTitle}
+                    </strong>
+                  )}
+
+                  <span
+                    dangerouslySetInnerHTML={renderHTML(
+                      alertMessage,
+                    )}
+                  />
+                </div>
+              );
+            }
+
+            /* ===================================================
+               WARNING
+               =================================================== */
+
+            case "warning": {
+              if (!block.data) return null;
+
+              const alertTitle =
+                block.data.title?.trim() || "Warning";
+
+              const alertMessage =
+                block.data.message?.trim();
+
+              if (!alertMessage) return null;
+
+              return (
+                <div
+                  key={index}
+                  className="not-prose mb-5 rounded-xl border border-border bg-muted p-3 text-foreground sm:p-4"
+                >
                   <strong className="mb-1 block font-semibold">
                     {alertTitle}
                   </strong>
-                )}
 
-                <span
-                  dangerouslySetInnerHTML={renderHTML(alertMessage)}
+                  <span>{alertMessage}</span>
+                </div>
+              );
+            }
+
+            /* ===================================================
+               PARAGRAPH
+               =================================================== */
+
+            case "paragraph":
+            case "aitext": {
+              const text = block.data.text?.trim();
+
+              if (!text) return null;
+
+              return (
+                <p
+                  key={index}
+                  className={bodyTextClasses}
+                  dangerouslySetInnerHTML={renderHTML(
+                    text,
+                  )}
                 />
-              </div>
-            );
-          }
+              );
+            }
 
-          /* ===================================================
-             WARNING
-             =================================================== */
+            /* ===================================================
+               LINK TOOL
+               =================================================== */
 
-          case "warning": {
-            if (!block.data) return null;
+            case "linktool": {
+              const link = block.data.link;
+              const meta = block.data.meta;
 
-            const alertTitle = block.data.title?.trim() || "Warning";
+              if (!link) return null;
 
-            const alertMessage = block.data.message?.trim();
-
-            if (!alertMessage) return null;
-
-            return (
-              <div
-                key={index}
-                className="not-prose mb-5 rounded-xl border border-border bg-muted p-3 text-foreground sm:p-4"
-              >
-                <strong className="mb-1 block font-semibold">
-                  {alertTitle}
-                </strong>
-
-                <span>{alertMessage}</span>
-              </div>
-            );
-          }
-
-          /* ===================================================
-             PARAGRAPH
-             =================================================== */
-
-          case "paragraph":
-          case "aitext": {
-            const text = block.data.text?.trim();
-
-            if (!text) return null;
-
-            return (
-              <p
-                key={index}
-                className={bodyTextClasses}
-                dangerouslySetInnerHTML={renderHTML(text)}
-              />
-            );
-          }
-
-          /* ===================================================
-             LINK TOOL
-             =================================================== */
-
-          case "linktool": {
-            const link = block.data.link;
-            const meta = block.data.meta;
-
-            if (!link) return null;
-
-            return (
-              <div
-                key={index}
-                className="not-prose my-6 flex flex-col items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:flex-row sm:gap-4 sm:p-4"
-              >
-                {meta?.image?.url && (
-                  <Image
-                    src={meta.image.url}
-                    alt={meta.title || "Link preview"}
-                    width={100}
-                    height={100}
-                    className="h-20 w-20 shrink-0 rounded-lg object-cover"
-                  />
-                )}
-
-                <div className="min-w-0 flex-1">
-                  <a
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-primary hover:underline"
-                  >
-                    {meta?.title || link}
-                  </a>
-
-                  {meta?.description && (
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                      {meta.description}
-                    </p>
+              return (
+                <div
+                  key={index}
+                  className="not-prose my-6 flex flex-col items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:flex-row sm:gap-4 sm:p-4"
+                >
+                  {meta?.image?.url && (
+                    <Image
+                      src={meta.image.url}
+                      alt={
+                        meta.title || "Link preview"
+                      }
+                      width={100}
+                      height={100}
+                      className="h-20 w-20 shrink-0 rounded-lg object-cover"
+                    />
                   )}
 
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {link}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <a
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-primary hover:underline"
+                    >
+                      {meta?.title || link}
+                    </a>
+
+                    {meta?.description && (
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                        {meta.description}
+                      </p>
+                    )}
+
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      {link}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            );
-          }
+              );
+            }
 
-          /* ===================================================
-             ATTACHMENT
-             =================================================== */
+            /* ===================================================
+               ATTACHMENT
+               =================================================== */
 
-          case "attaches": {
-            const file = block.data.file;
+            case "attaches": {
+              const file = block.data.file;
 
-            const title = block.data.title || file?.name || "Download";
+              const title =
+                block.data.title ||
+                file?.name ||
+                "Download";
 
-            if (!file?.url) return null;
+              if (!file?.url) return null;
 
-            return (
-              <div key={index} className="not-prose mb-5">
-                <a
-                  href={file.url}
-                  download={title}
-                  className="inline-flex items-center rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-muted sm:px-4"
+              return (
+                <div
+                  key={index}
+                  className="not-prose mb-5"
                 >
-                  {title}
-                </a>
-              </div>
-            );
-          }
-
-          /* ===================================================
-             IMAGE
-             =================================================== */
-
-          case "image":
-            return (
-              <ImageBlock
-                key={index}
-                file={block.data.file}
-                caption={block.data.caption}
-              />
-            );
-
-          /* ===================================================
-             CODE
-             =================================================== */
-
-          case "code": {
-            return (
-              <CodeBlock
-                key={index}
-                code={block.data.code}
-                language={
-                  block.data.language || block.data.lang || "javascript"
-                }
-                title={block.data.title || "Code"}
-              />
-            );
-          }
-
-          /* ===================================================
-             HEADER — mobile-first sizing
-             =================================================== */
-
-          case "header": {
-            if (!block.data.text) return null;
-
-            const level = Math.min(
-              Math.max(block.data.level || 2, 1),
-              6,
-            );
-
-            const id = slugifyHeader(block.data.text);
-
-            const classes = HEADING_CLASSES[level] || HEADING_CLASSES[2];
-
-            const Tag = `h${level}` as keyof React.JSX.IntrinsicElements;
-
-            return (
-              <Tag key={index} id={id} className={classes}>
-                {block.data.text}
-              </Tag>
-            );
-          }
-
-          /* ===================================================
-             LIST
-             =================================================== */
-
-          case "list": {
-            if (!block.data.items?.length) {
-              return null;
-            }
-
-            const ListTag = block.data.style === "ordered" ? "ol" : "ul";
-
-            const listClass =
-              block.data.style === "ordered"
-                ? "mb-6 list-outside list-decimal space-y-2 pl-5 text-[16.5px] leading-[1.75] text-foreground/90 sm:pl-6 sm:text-lg sm:leading-8"
-                : "mb-6 list-outside list-disc space-y-2 pl-5 text-[16.5px] leading-[1.75] text-foreground/90 sm:pl-6 sm:text-lg sm:leading-8";
-
-            return (
-              <ListTag key={index} className={listClass}>
-                {block.data.items.map((item: any, i: number) => (
-                  <li
-                    key={i}
-                    className="pl-1 text-justify [text-align-last:left] [hyphens:auto]"
-                    dangerouslySetInnerHTML={renderHTML(
-                      typeof item === "string"
-                        ? item
-                        : item.content || "",
-                    )}
-                  />
-                ))}
-              </ListTag>
-            );
-          }
-
-          /* ===================================================
-             CHECKLIST
-             =================================================== */
-
-          case "checklist": {
-            if (!block.data.items?.length) {
-              return null;
-            }
-
-            return (
-              <ul key={index} className="not-prose mb-6 space-y-3">
-                {block.data.items.map((item: any, i: number) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-3 text-base leading-7 sm:text-lg sm:leading-8"
+                  <a
+                    href={file.url}
+                    download={title}
+                    className="inline-flex items-center rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-muted sm:px-4"
                   >
-                    <input
-                      type="checkbox"
-                      checked={!!item.checked}
-                      readOnly
-                      className="mt-1 h-4 w-4 shrink-0 accent-primary"
-                    />
-
-                    <span
-                      className="text-justify [text-align-last:left] [hyphens:auto]"
-                      dangerouslySetInnerHTML={renderHTML(
-                        item.text || "",
-                      )}
-                    />
-                  </li>
-                ))}
-              </ul>
-            );
-          }
-
-          /* ===================================================
-             DELIMITER
-             =================================================== */
-
-          case "delimiter": {
-            const style = block.data?.style || "star";
-
-            const delimiterStyles: Record<string, string> = {
-              star: "★ ★ ★ ★ ★",
-              dash: "— — — — —",
-              line: "────────────────",
-            };
-
-            return (
-              <div
-                key={index}
-                className="not-prose my-8 text-center text-sm tracking-[0.35em] text-muted-foreground/60 sm:my-10"
-              >
-                {delimiterStyles[style] || delimiterStyles.star}
-              </div>
-            );
-          }
-
-          /* ===================================================
-             RAW HTML
-             =================================================== */
-
-          case "raw":
-            if (!block.data.html) return null;
-
-            return (
-              <div
-                key={index}
-                className="my-8 [&_p]:text-justify [&_p]:[text-align-last:left] [&_p]:[hyphens:auto]"
-                dangerouslySetInnerHTML={renderHTML(block.data.html)}
-              />
-            );
-
-          /* ===================================================
-             QUOTE
-             =================================================== */
-
-          case "quote":
-            if (!block.data.text) return null;
-
-            return (
-              <blockquote
-                key={index}
-                className="my-6 border-l-4 border-primary bg-muted/30 py-4 pl-4 pr-3 text-[16.5px] italic leading-[1.75] text-muted-foreground text-justify [text-align-last:left] [hyphens:auto] sm:my-8 sm:pl-5 sm:pr-4 sm:text-lg sm:leading-8"
-              >
-                {block.data.text}
-
-                {block.data.caption && (
-                  <footer className="mt-3 text-sm not-italic text-foreground/70">
-                    — {block.data.caption}
-                  </footer>
-                )}
-              </blockquote>
-            );
-
-          /* ===================================================
-             TABLE
-             =================================================== */
-
-          case "table": {
-            if (!block.data?.content) {
-              return null;
+                    {title}
+                  </a>
+                </div>
+              );
             }
 
-            return (
-              <div
-                key={index}
-                className="not-prose my-6 -mx-1 overflow-x-auto rounded-xl border border-border shadow-sm sm:mx-0 sm:my-8"
-              >
-                <table className="w-full min-w-[500px] border-collapse text-left">
-                  <tbody>
-                    {block.data.content.map(
-                      (row: string[], rowIdx: number) => (
-                        <tr
-                          key={rowIdx}
-                          className="border-b border-border last:border-b-0"
-                        >
-                          {row.map((cell, cellIdx) => (
-                            <td
-                              key={cellIdx}
-                              className="border-r border-border px-3 py-2.5 text-sm leading-6 text-foreground last:border-r-0 sm:px-4 sm:py-3"
-                              dangerouslySetInnerHTML={renderHTML(cell)}
-                            />
-                          ))}
-                        </tr>
-                      ),
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            );
+            /* ===================================================
+               IMAGE
+               =================================================== */
+
+            case "image":
+              return (
+                <ImageBlock
+                  key={index}
+                  file={block.data.file}
+                  caption={block.data.caption}
+                />
+              );
+
+            /* ===================================================
+               CODE
+               =================================================== */
+
+            case "code": {
+              return (
+                <CodeBlock
+                  key={index}
+                  code={block.data.code}
+                  language={
+                    block.data.language ||
+                    block.data.lang ||
+                    "javascript"
+                  }
+                  title={block.data.title || "Code"}
+                />
+              );
+            }
+
+            /* ===================================================
+               HEADER
+               =================================================== */
+
+            case "header": {
+              if (!block.data.text) return null;
+
+              const level = Math.min(
+                Math.max(block.data.level || 2, 1),
+                6,
+              );
+
+              const id = slugifyHeader(
+                block.data.text,
+              );
+
+              const classes =
+                HEADING_CLASSES[level] ||
+                HEADING_CLASSES[2];
+
+              const Tag =
+                `h${level}` as keyof React.JSX.IntrinsicElements;
+
+              return (
+                <Tag
+                  key={index}
+                  id={id}
+                  className={classes}
+                >
+                  {block.data.text}
+                </Tag>
+              );
+            }
+
+            /* ===================================================
+               LIST
+               =================================================== */
+
+            case "list": {
+              if (!block.data.items?.length) {
+                return null;
+              }
+
+              const ListTag =
+                block.data.style === "ordered"
+                  ? "ol"
+                  : "ul";
+
+              const listClass =
+                block.data.style === "ordered"
+                  ? "mb-6 list-outside list-decimal space-y-2 pl-5 text-[16.5px] leading-[1.75] text-foreground/90 sm:pl-6 sm:text-lg sm:leading-8"
+                  : "mb-6 list-outside list-disc space-y-2 pl-5 text-[16.5px] leading-[1.75] text-foreground/90 sm:pl-6 sm:text-lg sm:leading-8";
+
+              return (
+                <ListTag
+                  key={index}
+                  className={listClass}
+                >
+                  {block.data.items.map(
+                    (item: any, i: number) => (
+                      <li
+                        key={i}
+                        className="pl-1 text-justify [text-align-last:left] [hyphens:auto]"
+                        dangerouslySetInnerHTML={renderHTML(
+                          typeof item === "string"
+                            ? item
+                            : item.content || "",
+                        )}
+                      />
+                    ),
+                  )}
+                </ListTag>
+              );
+            }
+
+            /* ===================================================
+               CHECKLIST
+               =================================================== */
+
+            case "checklist": {
+              if (!block.data.items?.length) {
+                return null;
+              }
+
+              return (
+                <ul
+                  key={index}
+                  className="not-prose mb-6 space-y-3"
+                >
+                  {block.data.items.map(
+                    (item: any, i: number) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-3 text-base leading-7 sm:text-lg sm:leading-8"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!item.checked}
+                          readOnly
+                          className="mt-1 h-4 w-4 shrink-0 accent-primary"
+                        />
+
+                        <span
+                          className="text-justify [text-align-last:left] [hyphens:auto]"
+                          dangerouslySetInnerHTML={renderHTML(
+                            item.text || "",
+                          )}
+                        />
+                      </li>
+                    ),
+                  )}
+                </ul>
+              );
+            }
+
+            /* ===================================================
+               DELIMITER
+               =================================================== */
+
+            case "delimiter": {
+              const style =
+                block.data?.style || "star";
+
+              const delimiterStyles: Record<
+                string,
+                string
+              > = {
+                star: "★ ★ ★ ★ ★",
+                dash: "— — — — —",
+                line: "────────────────",
+              };
+
+              return (
+                <div
+                  key={index}
+                  className="not-prose my-8 text-center text-sm tracking-[0.35em] text-muted-foreground/60 sm:my-10"
+                >
+                  {delimiterStyles[style] ||
+                    delimiterStyles.star}
+                </div>
+              );
+            }
+
+            /* ===================================================
+               RAW HTML
+               =================================================== */
+
+            case "raw":
+              if (!block.data.html) return null;
+
+              return (
+                <div
+                  key={index}
+                  className="my-8 [&_p]:text-justify [&_p]:[text-align-last:left] [&_p]:[hyphens:auto]"
+                  dangerouslySetInnerHTML={renderHTML(
+                    block.data.html,
+                  )}
+                />
+              );
+
+            /* ===================================================
+               QUOTE
+               =================================================== */
+
+            case "quote":
+              if (!block.data.text) return null;
+
+              return (
+                <blockquote
+                  key={index}
+                  className="my-6 border-l-4 border-primary bg-muted/30 py-4 pl-4 pr-3 text-[16.5px] italic leading-[1.75] text-muted-foreground text-justify [text-align-last:left] [hyphens:auto] sm:my-8 sm:pl-5 sm:pr-4 sm:text-lg sm:leading-8"
+                >
+                  {block.data.text}
+
+                  {block.data.caption && (
+                    <footer className="mt-3 text-sm not-italic text-foreground/70">
+                      — {block.data.caption}
+                    </footer>
+                  )}
+                </blockquote>
+              );
+
+            /* ===================================================
+               TABLE
+               =================================================== */
+
+            case "table": {
+              if (!block.data?.content) {
+                return null;
+              }
+
+              return (
+                <div
+                  key={index}
+                  className="not-prose my-6 -mx-1 overflow-x-auto rounded-xl border border-border shadow-sm sm:mx-0 sm:my-8"
+                >
+                  <table className="w-full min-w-[500px] border-collapse text-left">
+                    <tbody>
+                      {block.data.content.map(
+                        (
+                          row: string[],
+                          rowIdx: number,
+                        ) => (
+                          <tr
+                            key={rowIdx}
+                            className="border-b border-border last:border-b-0"
+                          >
+                            {row.map(
+                              (
+                                cell,
+                                cellIdx,
+                              ) => (
+                                <td
+                                  key={cellIdx}
+                                  className="border-r border-border px-3 py-2.5 text-sm leading-6 text-foreground last:border-r-0 sm:px-4 sm:py-3"
+                                  dangerouslySetInnerHTML={renderHTML(
+                                    cell,
+                                  )}
+                                />
+                              ),
+                            )}
+                          </tr>
+                        ),
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            }
+
+            /* ===================================================
+               UNKNOWN BLOCK
+               =================================================== */
+
+            default:
+              return null;
           }
-
-          /* ===================================================
-             UNKNOWN BLOCK
-             =================================================== */
-
-          default:
-            return null;
-        }
-      })}
+        },
+      )}
     </div>
   );
 };
