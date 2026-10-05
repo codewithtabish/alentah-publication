@@ -3,7 +3,8 @@
 // BlogContentContainer — ALENTAH
 //
 // The premium reading surface for every article.
-// Full-width by default. No fixed max-width caps.
+// Full-width, zero horizontal padding on every device.
+// No max-width caps. No side gutters.
 // The parent layout is responsible for horizontal sizing.
 // ============================================================
 
@@ -32,9 +33,12 @@ export function BlogContentContainer({
     <div
       className={cn(
         // Layout — full width, no max cap
-        "relative mx-auto min-w-0 w-full max-w-none",
+        "relative w-full min-w-0 max-w-none",
 
-        // Vertical rhythm
+        // Zero horizontal padding on every device
+        "px-0",
+
+        // Vertical rhythm only
         "py-8 sm:py-10 lg:py-12",
 
         // Reading experience
@@ -47,19 +51,7 @@ export function BlogContentContainer({
       )}
       {...props}
     >
-      {/* Subtle top glow */}
-      <div
-        aria-hidden="true"
-        className={cn(
-          "pointer-events-none absolute left-1/2 top-0 -z-10",
-          "-translate-x-1/2",
-          "h-32 w-full",
-          "bg-[radial-gradient(ellipse_60%_100%_at_50%_0%,color-mix(in_oklab,var(--primary)_4%,transparent),transparent_80%)]",
-          "dark:bg-[radial-gradient(ellipse_60%_100%_at_50%_0%,color-mix(in_oklab,var(--primary)_8%,transparent),transparent_80%)]",
-        )}
-      />
-
-      <div className="relative z-10 w-full">{children}</div>
+      <div className="relative z-10 w-full min-w-0">{children}</div>
     </div>
   );
 }

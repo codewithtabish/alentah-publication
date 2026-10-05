@@ -29,8 +29,8 @@ const ImageBlock: React.FC<{
   if (!file?.url) return null;
 
   return (
-    <figure className="my-10 flex flex-col items-center">
-      <div className="w-full overflow-hidden rounded-2xl border border-border bg-muted/20 shadow-sm">
+    <figure className="my-8 flex flex-col items-center sm:my-10">
+      <div className="w-full overflow-hidden rounded-xl border border-border bg-muted/20 shadow-sm sm:rounded-2xl">
         <Image
           src={file.url}
           alt={caption || "Blog image"}
@@ -109,10 +109,10 @@ const CodeBlock: React.FC<{
   return (
     <div
       data-code-switcher
-      className="not-prose my-8 w-full overflow-hidden rounded-2xl border border-border bg-muted/20 shadow-sm"
+      className="not-prose my-6 w-full overflow-hidden rounded-xl border border-border bg-muted/20 shadow-sm sm:my-8 sm:rounded-2xl"
     >
-      <div className="flex min-h-[58px] items-center justify-between gap-4 border-b border-border bg-background/80 px-4 py-3 backdrop-blur-sm sm:px-5">
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-border bg-background/80 px-3 py-2.5 backdrop-blur-sm sm:min-h-[58px] sm:gap-4 sm:px-5 sm:py-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div className="hidden items-center gap-1.5 sm:flex">
             <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
             <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
@@ -122,7 +122,9 @@ const CodeBlock: React.FC<{
           <div className="hidden h-4 w-px bg-border sm:block" />
 
           <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-sm font-medium text-foreground">{title}</span>
+            <span className="truncate text-[13px] font-medium text-foreground sm:text-sm">
+              {title}
+            </span>
 
             <span className="hidden rounded-md border border-border bg-muted px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground sm:inline-flex">
               {languageLabel}
@@ -134,7 +136,7 @@ const CodeBlock: React.FC<{
           type="button"
           data-code-copy
           onClick={handleCopy}
-          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-muted-foreground shadow-sm transition-all hover:bg-muted hover:text-foreground active:scale-[0.98]"
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground shadow-sm transition-all hover:bg-muted hover:text-foreground active:scale-[0.98] sm:px-3 sm:py-2"
           aria-label="Copy code"
         >
           {copied ? (
@@ -158,7 +160,12 @@ const CodeBlock: React.FC<{
             </>
           ) : (
             <>
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
                 <rect
                   x="9"
                   y="9"
@@ -183,8 +190,11 @@ const CodeBlock: React.FC<{
         </button>
       </div>
 
-      <div data-code-language-content={normalizedLanguage} className="overflow-x-auto">
-        <pre className="m-0 min-w-full bg-transparent px-4 py-5 text-[12.5px] leading-6 sm:px-6 sm:py-7 sm:text-sm">
+      <div
+        data-code-language-content={normalizedLanguage}
+        className="overflow-x-auto"
+      >
+        <pre className="m-0 min-w-full bg-transparent px-3 py-4 text-[12px] leading-6 sm:px-6 sm:py-7 sm:text-sm">
           <code className="font-mono text-foreground">{code}</code>
         </pre>
       </div>
@@ -234,10 +244,81 @@ function getTableOfContentsItemData(item: TableOfContentsItem) {
 }
 
 /* =========================================================
+   HEADING CLASSES
+   ---------------------------------------------------------
+   Mobile-first scale — small on phones, grows on larger
+   screens. Headings inside the article should feel like
+   section markers, not poster titles.
+   ========================================================= */
+
+const HEADING_CLASSES: Record<number, string> = {
+  1: [
+    "scroll-mt-24",
+    "mt-8 mb-3",
+    "text-[1.375rem] leading-[1.25] font-bold tracking-[-0.02em]", // 22px
+    "sm:mt-10 sm:mb-4 sm:text-2xl sm:leading-[1.2]", // 24px
+    "md:mt-12 md:text-[1.75rem] md:leading-[1.15]", // 28px
+    "lg:text-3xl", // 30px
+    "text-foreground [text-wrap:balance]",
+  ].join(" "),
+
+  2: [
+    "scroll-mt-24",
+    "mt-7 mb-3",
+    "text-[1.25rem] leading-[1.3] font-bold tracking-[-0.015em]", // 20px
+    "sm:mt-9 sm:mb-3 sm:text-[1.375rem] sm:leading-[1.25]", // 22px
+    "md:mt-10 md:text-2xl md:leading-[1.2]", // 24px
+    "lg:text-[1.625rem]", // 26px
+    "text-foreground [text-wrap:balance]",
+  ].join(" "),
+
+  3: [
+    "scroll-mt-24",
+    "mt-6 mb-2.5",
+    "text-[1.0625rem] leading-[1.35] font-bold tracking-[-0.01em]", // 17px
+    "sm:mt-8 sm:mb-3 sm:text-[1.125rem] sm:leading-[1.3]", // 18px
+    "md:mt-9 md:text-xl md:leading-[1.25]", // 20px
+    "lg:text-[1.375rem]", // 22px
+    "text-foreground [text-wrap:balance]",
+  ].join(" "),
+
+  4: [
+    "scroll-mt-24",
+    "mt-5 mb-2",
+    "text-[1rem] leading-[1.4] font-semibold tracking-normal", // 16px
+    "sm:mt-6 sm:mb-2.5 sm:text-[1.0625rem] sm:leading-[1.35]", // 17px
+    "md:mt-7 md:text-[1.125rem]", // 18px
+    "lg:text-[1.1875rem]", // 19px
+    "text-foreground [text-wrap:balance]",
+  ].join(" "),
+
+  5: [
+    "scroll-mt-24",
+    "mt-4 mb-2",
+    "text-[0.9375rem] leading-[1.45] font-semibold tracking-normal", // 15px
+    "sm:mt-5 sm:text-[1rem] sm:leading-[1.4]", // 16px
+    "md:text-[1.0625rem]", // 17px
+    "text-foreground [text-wrap:balance]",
+  ].join(" "),
+
+  6: [
+    "scroll-mt-24",
+    "mt-4 mb-2",
+    "text-[0.875rem] leading-[1.5] font-semibold uppercase tracking-[0.06em]", // 14px
+    "sm:text-[0.9375rem]", // 15px
+    "md:text-[1rem]", // 16px
+    "text-foreground [text-wrap:balance]",
+  ].join(" "),
+};
+
+/* =========================================================
    BLOG PREVIEWER
    ========================================================= */
 
-export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }) => {
+export const BlogPreviewer: React.FC<Props> = ({
+  content,
+  tableOfContents = [],
+}) => {
   const [openToggles, setOpenToggles] = useState<Record<string, boolean>>({});
   const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("");
@@ -247,7 +328,9 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
      ========================================================= */
 
   const validTableOfContents = useMemo(() => {
-    return tableOfContents.map(getTableOfContentsItemData).filter((item) => item.id && item.title);
+    return tableOfContents
+      .map(getTableOfContentsItemData)
+      .filter((item) => item.id && item.title);
   }, [tableOfContents]);
 
   /* =========================================================
@@ -329,7 +412,10 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
      TOC CLICK
      ========================================================= */
 
-  const handleTableOfContentsClick = (event: React.MouseEvent<HTMLButtonElement>, id: string) => {
+  const handleTableOfContentsClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    id: string,
+  ) => {
     event.preventDefault();
 
     const target = document.getElementById(id);
@@ -377,19 +463,12 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
 
   const alertClasses: Record<string, string> = {
     primary: "border-primary/30 bg-primary/10 text-foreground",
-
     secondary: "border-border bg-muted text-foreground",
-
     info: "border-primary/30 bg-primary/10 text-foreground",
-
     success: "border-primary/30 bg-primary/10 text-foreground",
-
     warning: "border-border bg-muted text-foreground",
-
     danger: "border-destructive/30 bg-destructive/10 text-foreground",
-
     light: "border-border bg-background text-foreground",
-
     dark: "border-border bg-foreground text-background",
   };
 
@@ -401,17 +480,12 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
 
   /* =========================================================
      BODY TEXT CLASSES
-     ---------------------------------------------------------
-     Shared paragraph styling.
-     • JUSTIFIED on ALL devices (mobile + tablet + desktop)
-     • Last line left-aligned for a clean look
-     • Hyphenation enabled
-     • Balanced word wrap
      ========================================================= */
 
   const bodyTextClasses = [
     "mb-6",
-    "text-[17px] leading-[1.75] sm:text-lg sm:leading-8",
+    "px-0",
+    "text-[16.5px] leading-[1.75] sm:text-lg sm:leading-8",
     "text-foreground/90",
     "text-justify",
     "[text-align-last:left]",
@@ -420,7 +494,7 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
   ].join(" ");
 
   return (
-    <div className="prose max-w-none dark:prose-invert">
+    <div className="prose max-w-none px-0 dark:prose-invert">
       <CodeBlockSwitcher />
 
       {/* =====================================================
@@ -431,18 +505,20 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
         <nav
           data-toc
           aria-label="Table of contents"
-          className="not-prose sticky top-3 z-30 mx-auto my-6 w-full max-w-3xl sm:top-4 sm:my-8 lg:my-10"
+          className="not-prose sticky top-3 z-30 mx-auto my-5 w-full px-0 sm:top-4 sm:my-8 lg:my-10"
         >
-          <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-md backdrop-blur-sm">
+          <div className="overflow-hidden rounded-xl border border-border bg-card/95 shadow-md backdrop-blur-sm sm:rounded-2xl">
             <button
               type="button"
               aria-expanded={isTableOfContentsOpen}
               aria-controls="blog-table-of-contents"
-              onClick={() => setIsTableOfContentsOpen((previous) => !previous)}
-              className="group flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors duration-200 hover:bg-muted/40 sm:gap-4 sm:px-6 sm:py-4"
+              onClick={() =>
+                setIsTableOfContentsOpen((previous) => !previous)
+              }
+              className="group flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors duration-200 hover:bg-muted/40 sm:gap-4 sm:px-6 sm:py-4"
             >
               <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                <span className="truncate text-sm font-semibold text-foreground sm:text-base">
+                <span className="truncate text-[13px] font-semibold text-foreground sm:text-base">
                   Table of Contents
                 </span>
 
@@ -452,7 +528,12 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
 
                 {activeSection && (
                   <span className="hidden truncate text-xs text-muted-foreground md:inline">
-                    • {validTableOfContents.find((item) => item.id === activeSection)?.title}
+                    •{" "}
+                    {
+                      validTableOfContents.find(
+                        (item) => item.id === activeSection,
+                      )?.title
+                    }
                   </span>
                 )}
               </div>
@@ -483,11 +564,13 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
               className={[
                 "grid transition-[grid-template-rows,opacity]",
                 "duration-300 ease-out",
-                isTableOfContentsOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+                isTableOfContentsOpen
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0",
               ].join(" ")}
             >
               <div className="min-h-0 overflow-hidden">
-                <div className="max-h-[60vh] overflow-y-auto border-t border-border bg-muted/10 px-3 py-3 sm:px-4 sm:py-4">
+                <div className="max-h-[60vh] overflow-y-auto border-t border-border bg-muted/10 px-2 py-2.5 sm:px-4 sm:py-4">
                   <div className="space-y-1">
                     {validTableOfContents.map((item, index) => {
                       const isActive = activeSection === item.id;
@@ -496,10 +579,12 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
                         <button
                           key={`${item.id}-${index}`}
                           type="button"
-                          onClick={(event) => handleTableOfContentsClick(event, item.id)}
+                          onClick={(event) =>
+                            handleTableOfContentsClick(event, item.id)
+                          }
                           aria-current={isActive ? "location" : undefined}
                           style={{
-                            paddingLeft: `${Math.max(item.level - 2, 0) * 16 + 12}px`,
+                            paddingLeft: `${Math.max(item.level - 2, 0) * 16 + 10}px`,
                           }}
                           className={[
                             "group flex min-h-10 w-full items-center",
@@ -564,7 +649,8 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
              =================================================== */
 
           case "toggle": {
-            const isOpen = openToggles[block.id] ?? block.data.status === "open";
+            const isOpen =
+              openToggles[block.id] ?? block.data.status === "open";
 
             if (!block.data.text && !block.data.itemsContent) {
               return null;
@@ -578,7 +664,7 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
                 <button
                   type="button"
                   onClick={() => handleToggleClick(block.id)}
-                  className="flex w-full items-center justify-between gap-4 bg-muted/40 px-4 py-3 text-left font-semibold text-foreground transition-colors hover:bg-muted/60"
+                  className="flex w-full items-center justify-between gap-4 bg-muted/40 px-3 py-3 text-left font-semibold text-foreground transition-colors hover:bg-muted/60 sm:px-4"
                 >
                   <span>{block.data.text}</span>
 
@@ -595,8 +681,10 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
 
                 {isOpen && block.data.itemsContent && (
                   <div
-                    className="px-4 py-4 text-foreground [&_p]:text-justify [&_p]:[text-align-last:left] [&_p]:[hyphens:auto]"
-                    dangerouslySetInnerHTML={renderHTML(block.data.itemsContent)}
+                    className="px-3 py-4 text-foreground sm:px-4 [&_p]:text-justify [&_p]:[text-align-last:left] [&_p]:[hyphens:auto]"
+                    dangerouslySetInnerHTML={renderHTML(
+                      block.data.itemsContent,
+                    )}
                   />
                 )}
               </div>
@@ -615,7 +703,9 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
             if (!alertMessage) return null;
 
             const alertTitle =
-              block.data.title === "Be Attentivte" ? "Be Attentive" : block.data.title;
+              block.data.title === "Be Attentivte"
+                ? "Be Attentive"
+                : block.data.title;
 
             const alertType = block.data.type || "warning";
 
@@ -625,14 +715,20 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
               <div
                 key={block.id || index}
                 className={[
-                  "not-prose mb-5 rounded-xl border p-4",
+                  "not-prose mb-5 rounded-xl border p-3 sm:p-4",
                   alertClasses[alertType] || alertClasses.warning,
                   alignClasses[alertAlign],
                 ].join(" ")}
               >
-                {alertTitle && <strong className="mb-1 block font-semibold">{alertTitle}</strong>}
+                {alertTitle && (
+                  <strong className="mb-1 block font-semibold">
+                    {alertTitle}
+                  </strong>
+                )}
 
-                <span dangerouslySetInnerHTML={renderHTML(alertMessage)} />
+                <span
+                  dangerouslySetInnerHTML={renderHTML(alertMessage)}
+                />
               </div>
             );
           }
@@ -653,9 +749,11 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
             return (
               <div
                 key={index}
-                className="not-prose mb-5 rounded-xl border border-border bg-muted p-4 text-foreground"
+                className="not-prose mb-5 rounded-xl border border-border bg-muted p-3 text-foreground sm:p-4"
               >
-                <strong className="mb-1 block font-semibold">{alertTitle}</strong>
+                <strong className="mb-1 block font-semibold">
+                  {alertTitle}
+                </strong>
 
                 <span>{alertMessage}</span>
               </div>
@@ -663,7 +761,7 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
           }
 
           /* ===================================================
-             PARAGRAPH  (justified on ALL devices)
+             PARAGRAPH
              =================================================== */
 
           case "paragraph":
@@ -694,7 +792,7 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
             return (
               <div
                 key={index}
-                className="not-prose my-6 flex flex-col items-start gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:gap-4"
+                className="not-prose my-6 flex flex-col items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:flex-row sm:gap-4 sm:p-4"
               >
                 {meta?.image?.url && (
                   <Image
@@ -722,7 +820,9 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
                     </p>
                   )}
 
-                  <p className="mt-1 truncate text-xs text-muted-foreground">{link}</p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">
+                    {link}
+                  </p>
                 </div>
               </div>
             );
@@ -744,7 +844,7 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
                 <a
                   href={file.url}
                   download={title}
-                  className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-muted"
+                  className="inline-flex items-center rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-muted sm:px-4"
                 >
                   {title}
                 </a>
@@ -757,7 +857,13 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
              =================================================== */
 
           case "image":
-            return <ImageBlock key={index} file={block.data.file} caption={block.data.caption} />;
+            return (
+              <ImageBlock
+                key={index}
+                file={block.data.file}
+                caption={block.data.caption}
+              />
+            );
 
           /* ===================================================
              CODE
@@ -768,31 +874,29 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
               <CodeBlock
                 key={index}
                 code={block.data.code}
-                language={block.data.language || block.data.lang || "javascript"}
+                language={
+                  block.data.language || block.data.lang || "javascript"
+                }
                 title={block.data.title || "Code"}
               />
             );
           }
 
           /* ===================================================
-             HEADER
+             HEADER — mobile-first sizing
              =================================================== */
 
           case "header": {
             if (!block.data.text) return null;
 
-            const level = Math.min(Math.max(block.data.level || 2, 1), 6);
+            const level = Math.min(
+              Math.max(block.data.level || 2, 1),
+              6,
+            );
 
             const id = slugifyHeader(block.data.text);
 
-            const classes =
-              level === 1
-                ? "scroll-mt-24 mb-5 mt-12 text-3xl font-bold tracking-tight text-foreground [text-wrap:balance] sm:text-4xl md:text-5xl"
-                : level === 2
-                  ? "scroll-mt-24 mb-4 mt-10 text-2xl font-bold tracking-tight text-foreground [text-wrap:balance] sm:text-3xl md:text-4xl"
-                  : level === 3
-                    ? "scroll-mt-24 mb-3 mt-8 text-xl font-bold tracking-tight text-foreground [text-wrap:balance] sm:text-2xl md:text-3xl"
-                    : "scroll-mt-24 mb-3 mt-7 text-lg font-semibold tracking-tight text-foreground [text-wrap:balance] sm:text-xl md:text-2xl";
+            const classes = HEADING_CLASSES[level] || HEADING_CLASSES[2];
 
             const Tag = `h${level}` as keyof React.JSX.IntrinsicElements;
 
@@ -816,8 +920,8 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
 
             const listClass =
               block.data.style === "ordered"
-                ? "mb-6 list-outside list-decimal space-y-2 pl-6 text-[17px] leading-[1.75] text-foreground/90 sm:text-lg sm:leading-8"
-                : "mb-6 list-outside list-disc space-y-2 pl-6 text-[17px] leading-[1.75] text-foreground/90 sm:text-lg sm:leading-8";
+                ? "mb-6 list-outside list-decimal space-y-2 pl-5 text-[16.5px] leading-[1.75] text-foreground/90 sm:pl-6 sm:text-lg sm:leading-8"
+                : "mb-6 list-outside list-disc space-y-2 pl-5 text-[16.5px] leading-[1.75] text-foreground/90 sm:pl-6 sm:text-lg sm:leading-8";
 
             return (
               <ListTag key={index} className={listClass}>
@@ -826,7 +930,9 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
                     key={i}
                     className="pl-1 text-justify [text-align-last:left] [hyphens:auto]"
                     dangerouslySetInnerHTML={renderHTML(
-                      typeof item === "string" ? item : item.content || "",
+                      typeof item === "string"
+                        ? item
+                        : item.content || "",
                     )}
                   />
                 ))}
@@ -859,7 +965,9 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
 
                     <span
                       className="text-justify [text-align-last:left] [hyphens:auto]"
-                      dangerouslySetInnerHTML={renderHTML(item.text || "")}
+                      dangerouslySetInnerHTML={renderHTML(
+                        item.text || "",
+                      )}
                     />
                   </li>
                 ))}
@@ -883,7 +991,7 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
             return (
               <div
                 key={index}
-                className="not-prose my-10 text-center text-sm tracking-[0.35em] text-muted-foreground/60"
+                className="not-prose my-8 text-center text-sm tracking-[0.35em] text-muted-foreground/60 sm:my-10"
               >
                 {delimiterStyles[style] || delimiterStyles.star}
               </div>
@@ -915,7 +1023,7 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
             return (
               <blockquote
                 key={index}
-                className="my-8 border-l-4 border-primary bg-muted/30 py-4 pl-5 pr-4 text-[17px] italic leading-[1.75] text-muted-foreground text-justify [text-align-last:left] [hyphens:auto] sm:text-lg sm:leading-8"
+                className="my-6 border-l-4 border-primary bg-muted/30 py-4 pl-4 pr-3 text-[16.5px] italic leading-[1.75] text-muted-foreground text-justify [text-align-last:left] [hyphens:auto] sm:my-8 sm:pl-5 sm:pr-4 sm:text-lg sm:leading-8"
               >
                 {block.data.text}
 
@@ -939,21 +1047,26 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
             return (
               <div
                 key={index}
-                className="not-prose my-8 overflow-x-auto rounded-xl border border-border shadow-sm"
+                className="not-prose my-6 -mx-1 overflow-x-auto rounded-xl border border-border shadow-sm sm:mx-0 sm:my-8"
               >
                 <table className="w-full min-w-[500px] border-collapse text-left">
                   <tbody>
-                    {block.data.content.map((row: string[], rowIdx: number) => (
-                      <tr key={rowIdx} className="border-b border-border last:border-b-0">
-                        {row.map((cell, cellIdx) => (
-                          <td
-                            key={cellIdx}
-                            className="border-r border-border px-3 py-2.5 text-sm leading-6 text-foreground last:border-r-0 sm:px-4 sm:py-3"
-                            dangerouslySetInnerHTML={renderHTML(cell)}
-                          />
-                        ))}
-                      </tr>
-                    ))}
+                    {block.data.content.map(
+                      (row: string[], rowIdx: number) => (
+                        <tr
+                          key={rowIdx}
+                          className="border-b border-border last:border-b-0"
+                        >
+                          {row.map((cell, cellIdx) => (
+                            <td
+                              key={cellIdx}
+                              className="border-r border-border px-3 py-2.5 text-sm leading-6 text-foreground last:border-r-0 sm:px-4 sm:py-3"
+                              dangerouslySetInnerHTML={renderHTML(cell)}
+                            />
+                          ))}
+                        </tr>
+                      ),
+                    )}
                   </tbody>
                 </table>
               </div>

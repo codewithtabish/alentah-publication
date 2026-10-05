@@ -3,10 +3,10 @@
 // BlogHeader — ALENTAH
 // Article hero: category, title, description, meta, banner.
 // Fully responsive. Editorial premium styling.
-// Title + description span full width.
+// Title + description span full width on every screen size.
 // ============================================================
 
-import { CalendarDays, Clock3, UserRound } from "lucide-react";
+import { CalendarDays, Clock3 } from "lucide-react";
 import Image from "next/image";
 
 // ============================================================
@@ -120,7 +120,7 @@ export default function BlogHeader({
   const initials = getInitials(authorName);
 
   return (
-    <header className="relative w-full overflow-hidden pt-10 sm:pt-14 lg:pt-16">
+    <header className="relative w-full min-w-0 overflow-hidden pt-10 sm:pt-14 lg:pt-16">
       {/* =====================================================
           AMBIENT BACKGROUND
           Soft top glow + bottom fade for depth
@@ -134,19 +134,19 @@ export default function BlogHeader({
         ].join(" ")}
       />
 
-      <div className="w-full">
+      <div className="w-full min-w-0">
         {/* =====================================================
             CATEGORY KICKER
             Small dot + uppercase label + hairline
         ====================================================== */}
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <span
             aria-hidden="true"
-            className="inline-block size-1.5 rounded-full bg-primary"
+            className="inline-block size-1.5 shrink-0 rounded-full bg-primary"
           />
 
           <p
-            className="text-[11px] font-bold uppercase tracking-[0.24em] text-primary"
+            className="min-w-0 truncate text-[10px] font-bold uppercase tracking-[0.2em] text-primary sm:text-[11px] sm:tracking-[0.24em]"
             aria-label="Category"
           >
             {categoryLabel}
@@ -157,18 +157,18 @@ export default function BlogHeader({
 
           <span
             aria-hidden="true"
-            className="h-px flex-1 max-w-[120px] bg-linear-to-r from-primary/40 to-transparent"
+            className="h-px min-w-0 flex-1 bg-linear-to-r from-primary/40 to-transparent"
           />
         </div>
 
         {/* =====================================================
-            TITLE — full width
+            TITLE — full width, breaks long words
         ====================================================== */}
         <h1
           className={[
-            "mt-5 w-full font-bold tracking-[-0.035em] text-foreground",
-            "text-[1.875rem] leading-[1.15]",
-            "sm:text-4xl sm:leading-[1.12]",
+            "mt-5 w-full max-w-none wrap-break-word font-bold tracking-[-0.03em] text-foreground",
+            "text-[1.75rem] leading-[1.15]",
+            "sm:text-4xl sm:leading-[1.12] sm:tracking-[-0.035em]",
             "md:text-5xl md:leading-[1.1]",
             "lg:text-[3.5rem] lg:leading-[1.06]",
             "xl:text-[4rem] xl:leading-[1.05]",
@@ -178,15 +178,16 @@ export default function BlogHeader({
         </h1>
 
         {/* =====================================================
-            DESCRIPTION — full width
+            DESCRIPTION — full width, breaks long words
         ====================================================== */}
         {shortDescription && (
           <p
             className={[
-              "mt-6 w-full text-muted-foreground",
-              "text-base leading-7",
-              "sm:text-[1.0625rem] sm:leading-8",
-              "md:text-lg md:leading-9",
+              "mt-6 w-full max-w-none wrap-break-word text-muted-foreground",
+              "text-[15px] leading-7",
+              "sm:text-base sm:leading-7",
+              "md:text-[1.0625rem] md:leading-8",
+              "lg:text-lg lg:leading-9",
             ].join(" ")}
           >
             {shortDescription}
@@ -198,11 +199,11 @@ export default function BlogHeader({
         ====================================================== */}
         <div className="mt-9 flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-border/70 pt-6 sm:mt-10">
           {/* Author chip */}
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <span
               aria-hidden="true"
               className={[
-                "flex size-9 items-center justify-center rounded-full",
+                "flex size-9 shrink-0 items-center justify-center rounded-full",
                 "border border-border bg-muted/60",
                 "text-[11px] font-bold tracking-wide text-foreground",
               ].join(" ")}
@@ -210,12 +211,12 @@ export default function BlogHeader({
               {initials}
             </span>
 
-            <div className="flex flex-col leading-tight">
+            <div className="flex min-w-0 flex-col leading-tight">
               <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
                 Written by
               </span>
 
-              <span className="text-sm font-semibold text-foreground">
+              <span className="truncate text-sm font-semibold text-foreground">
                 {authorName}
               </span>
             </div>
@@ -231,7 +232,7 @@ export default function BlogHeader({
           {formattedDate && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CalendarDays
-                className="size-3.5 opacity-70"
+                className="size-3.5 shrink-0 opacity-70"
                 aria-hidden="true"
               />
 
@@ -257,7 +258,7 @@ export default function BlogHeader({
 
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock3
-                  className="size-3.5 opacity-70"
+                  className="size-3.5 shrink-0 opacity-70"
                   aria-hidden="true"
                 />
                 <span>{readingTime} min read</span>
@@ -290,9 +291,8 @@ export default function BlogHeader({
             <div
               className={[
                 "group relative w-full overflow-hidden",
-                "rounded-2xl border border-border",
+                "rounded-xl border border-border sm:rounded-2xl lg:rounded-3xl",
                 "bg-muted shadow-[0_1px_0_0_rgba(255,255,255,0.03)_inset,0_20px_50px_-30px_rgba(0,0,0,0.6)]",
-                "sm:rounded-3xl",
               ].join(" ")}
             >
               <div className="relative aspect-video w-full">
@@ -302,7 +302,7 @@ export default function BlogHeader({
                   fill
                   priority
                   sizes="100vw"
-                  className="object-cover transition-transform duration-900 ease-out group-hover:scale-[1.02]"
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
                 />
 
                 {/* Top fade */}
@@ -320,7 +320,7 @@ export default function BlogHeader({
                 {/* Hairline inner border */}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/5 sm:rounded-3xl"
+                  className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/5 sm:rounded-2xl lg:rounded-3xl"
                 />
               </div>
             </div>

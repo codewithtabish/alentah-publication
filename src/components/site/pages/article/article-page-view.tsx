@@ -6,15 +6,9 @@
 //   app/[category]/[slug]/page.tsx
 //   app/[category]/[subcategory]/[slug]/page.tsx
 //
-// Exposes:
-//   - ArticlePageRecord          (type)
-//   - ArticlePageView            (main renderer)
-//   - ArticlePageSkeleton        (Suspense fallback)
-//   - buildArticleMetadata()     (for generateMetadata)
-//   - getAuthorName()            (helper)
-//   - formatPublishedDate()      (helper)
-//   - parseArticleHtml()         (helper)
-//   - parseArticleToc()          (helper)
+// Zero horizontal padding on mobile. Content is edge-to-edge
+// on small screens; the parent layout is responsible for any
+// desktop gutters.
 // ============================================================
 
 import Image from "next/image";
@@ -245,7 +239,7 @@ export function ArticlePageView({
     article.subcategory?.name ?? null;
 
   return (
-    <article className="mx-auto w-full max-w-[1200px] py-8 sm:py-12 lg:py-16">
+    <article className="mx-auto w-full max-w-none py-8 px-0 sm:max-w-[1200px] sm:py-12 lg:py-16">
       {/* ============================================================
           BREADCRUMB
           ============================================================ */}
@@ -278,11 +272,11 @@ export function ArticlePageView({
       {/* ============================================================
           HERO
           ============================================================ */}
-      <header className="space-y-6">
+      <header className="space-y-5 px-0 sm:space-y-6">
         <h1
           className={cn(
-            "font-serif tracking-tight text-foreground",
-            "text-3xl leading-[1.15]",
+            "wrap-break-word font-serif tracking-tight text-foreground",
+            "text-[1.75rem] leading-[1.15]",
             "sm:text-4xl sm:leading-[1.12]",
             "lg:text-[3rem] lg:leading-[1.08]",
           )}
@@ -291,14 +285,14 @@ export function ArticlePageView({
         </h1>
 
         {article.shortDescription && (
-          <p className="max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+          <p className="max-w-none wrap-break-word text-[15px] leading-7 text-muted-foreground sm:max-w-3xl sm:text-lg sm:leading-relaxed">
             {article.shortDescription}
           </p>
         )}
 
         {/* Byline */}
         <div className="flex flex-wrap items-center gap-4 pt-2">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
               {article.author.imageUrl ? (
                 <Image
@@ -316,8 +310,8 @@ export function ArticlePageView({
               )}
             </div>
 
-            <div className="text-[12px] leading-tight">
-              <p className="font-medium text-foreground">
+            <div className="min-w-0 text-[12px] leading-tight">
+              <p className="truncate font-medium text-foreground">
                 {authorName}
               </p>
               <p className="mt-0.5 text-muted-foreground">
@@ -358,33 +352,72 @@ export function ArticlePageView({
           ============================================================ */}
       <div className="mt-10 grid grid-cols-1 gap-10 sm:mt-12 lg:mt-14 lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-14">
         {/* ---------- BODY ---------- */}
-        <div className="min-w-0">
+        <div className="min-w-0 px-0">
           {html ? (
             <div
               className={cn(
                 "article-content",
-                "[&_p]:text-lg [&_p]:leading-8 [&_p]:text-foreground",
-                "[&_h2]:mt-12 [&_h2]:font-serif [&_h2]:text-3xl [&_h2]:tracking-tight [&_h2]:text-foreground",
-                "[&_h3]:mt-8 [&_h3]:font-serif [&_h3]:text-2xl [&_h3]:tracking-tight [&_h3]:text-foreground",
+                // Paragraphs — mobile-first sizing, justified
+                "[&_p]:mb-6 [&_p]:px-0",
+                "[&_p]:text-[16.5px] [&_p]:leading-[1.75]",
+                "[&_p]:sm:text-lg [&_p]:sm:leading-8",
+                "[&_p]:text-foreground",
+                "[&_p]:text-justify",
+                "[&_p]:[text-align-last:left]",
+                "[&_p]:[hyphens:auto]",
+                "[&_p]:wrap-break-word",
+
+                // H2
+                "[&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:scroll-mt-24",
+                "[&_h2]:font-serif [&_h2]:text-2xl [&_h2]:tracking-tight",
+                "[&_h2]:sm:mt-12 [&_h2]:sm:text-3xl",
+                "[&_h2]:md:text-4xl [&_h2]:text-foreground",
+
+                // H3
+                "[&_h3]:mt-8 [&_h3]:mb-3 [&_h3]:scroll-mt-24",
+                "[&_h3]:font-serif [&_h3]:text-xl [&_h3]:tracking-tight",
+                "[&_h3]:sm:mt-10 [&_h3]:sm:text-2xl",
+                "[&_h3]:md:text-3xl [&_h3]:text-foreground",
+
+                // H4
+                "[&_h4]:mt-6 [&_h4]:mb-3 [&_h4]:scroll-mt-24",
+                "[&_h4]:font-serif [&_h4]:text-lg [&_h4]:tracking-tight",
+                "[&_h4]:sm:text-xl [&_h4]:text-foreground",
+
+                // Links
                 "[&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-4 hover:[&_a]:decoration-primary",
-                "[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2",
-                "[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:space-y-2",
-                "[&_li]:text-lg [&_li]:leading-8 [&_li]:text-foreground",
+
+                // Lists
+                "[&_ul]:list-disc [&_ul]:pl-5 [&_ul]:sm:pl-6 [&_ul]:space-y-2 [&_ul]:mb-6",
+                "[&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:sm:pl-6 [&_ol]:space-y-2 [&_ol]:mb-6",
+                "[&_li]:text-[16.5px] [&_li]:leading-[1.75] [&_li]:sm:text-lg [&_li]:sm:leading-8 [&_li]:text-foreground",
+                "[&_li]:text-justify [&_li]:[text-align-last:left] [&_li]:[hyphens:auto]",
+
+                // Inline
                 "[&_strong]:font-semibold [&_strong]:text-foreground",
+                "[&_em]:italic",
                 "[&_code]:rounded [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-sm",
-                "[&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-5 [&_blockquote]:italic [&_blockquote]:text-muted-foreground",
+
+                // Blockquote
+                "[&_blockquote]:my-6 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40",
+                "[&_blockquote]:pl-4 [&_blockquote]:pr-3 [&_blockquote]:sm:pl-5 [&_blockquote]:sm:pr-4",
+                "[&_blockquote]:italic [&_blockquote]:text-muted-foreground",
+                "[&_blockquote]:text-justify [&_blockquote]:[text-align-last:left] [&_blockquote]:[hyphens:auto]",
+
+                // Images
+                "[&_img]:my-6 [&_img]:rounded-lg [&_img]:w-full [&_img]:h-auto",
               )}
               dangerouslySetInnerHTML={{ __html: html }}
             />
           ) : (
-            <p className="text-lg leading-8 text-muted-foreground">
+            <p className="px-0 text-[16.5px] leading-7 text-muted-foreground sm:text-lg sm:leading-8">
               The content of this article is not yet available.
             </p>
           )}
 
           {/* ---------- AUTHOR BIO ---------- */}
           {article.author.bio && (
-            <aside className="mt-14 rounded-lg border border-border bg-muted/40 p-6">
+            <aside className="mt-12 rounded-lg border border-border bg-muted/40 p-4 sm:mt-14 sm:p-6">
               <div className="flex items-start gap-4">
                 <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
                   {article.author.imageUrl ? (
@@ -419,7 +452,7 @@ export function ArticlePageView({
           )}
 
           {/* ---------- BACK LINK ---------- */}
-          <div className="mt-12">
+          <div className="mt-10 sm:mt-12">
             <Link
               href={
                 subcategoryHref ?? categoryHref
@@ -479,7 +512,7 @@ export function ArticlePageView({
 
 export function ArticlePageSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-[1200px] animate-pulse py-8 sm:py-12 lg:py-16">
+    <div className="mx-auto w-full max-w-none px-0 py-8 sm:max-w-[1200px] sm:py-12 lg:py-16">
       <div className="mb-6 flex gap-2">
         <div className="h-3 w-20 rounded-full bg-muted" />
         <div className="h-3 w-3 rounded-full bg-muted/60" />

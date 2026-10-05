@@ -6,6 +6,10 @@
 // Layout:
 //   Mobile  → single column, TOC collapses above the article
 //   Desktop → [content 1fr] [TOC 280px]  (TOC on the RIGHT)
+//
+// Padding:
+//   Mobile  → px-0 (full-bleed, edge-to-edge)
+//   lg+     → px-8 / xl:px-10 (comfortable reading gutters)
 // ============================================================
 
 import { Suspense } from "react";
@@ -13,8 +17,6 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { getArticleBySlug } from "@/actions/blog/get-article-by-slug";
-
-// import TheDaily from "@/components/blog/the-daily";
 
 import type { TableOfContentsItem } from "@/schemas/blog-schema";
 import { ArticlePageSkeleton } from "@/components/site/pages/article/article-page-view";
@@ -154,12 +156,11 @@ async function ArticleContent({
     : [];
 
   return (
-    <main className="w-full">
+    <main className="w-full min-w-0 px-0">
       {/* =====================================================
-          HERO HEADER (full-width)
+          HERO HEADER (full-width, zero padding on mobile)
       ====================================================== */}
       <BlogHeader
-      
         title={blog.title}
         shortDescription={blog.shortDescription}
         publishedAt={blog.publishedAt}
@@ -174,13 +175,13 @@ async function ArticleContent({
 
       {/* =====================================================
           READING GRID
-            mobile  → 1 column (TOC above body)
-            lg+     → [content 1fr] [toc 280px]  (TOC right)
+            mobile  → 1 column (TOC above body), px-0
+            lg+     → [content 1fr] [toc 280px], px-8 / px-10
       ====================================================== */}
-      <div className="mx-auto w-full max-w-[1440px] px-4 pb-16 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24 xl:px-10">
+      <div className="mx-auto w-full min-w-0 max-w-[1440px] px-0 pb-12 sm:pb-16 lg:px-8 lg:pb-24 xl:px-10">
         <div
           className={[
-            "grid w-full gap-8 lg:gap-10 xl:gap-14",
+            "grid w-full min-w-0 gap-8 lg:gap-10 xl:gap-14",
             "grid-cols-1",
             "lg:grid-cols-[minmax(0,1fr)_280px]",
             "xl:grid-cols-[minmax(0,1fr)_300px]",
@@ -212,7 +213,7 @@ async function ArticleContent({
 
           {/* =================================================
               TABLE OF CONTENTS
-                mobile → above body (order-1)
+                mobile → above body (order-1), full-bleed
                 lg+    → sticky right sidebar (order-2)
           ================================================= */}
           <ArticleTOC
