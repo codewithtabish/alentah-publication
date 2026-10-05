@@ -17,6 +17,7 @@ import { ThemeProvider } from "@/components/site/general/theme/theme-provider";
 import { ClerkProvider } from "@clerk/nextjs";
 
 import { Toaster } from "sonner";
+import { ExitIntentPopup } from "@/components/site/general/navbars/exit-intent-popup";
 
 // ============================================
 // FONTS
@@ -505,6 +506,7 @@ export default function RootLayout({
               {children}
             </main>
 
+            <ExitIntentPopup/>
             <Toaster />
           </ClerkProvider>
         </ThemeProvider>
