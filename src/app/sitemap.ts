@@ -15,6 +15,12 @@
 //   - Draft / scheduled / archived articles
 //   - Inactive categories and subcategories
 //   - Query-param URLs (they canonicalize to base)
+//
+// CRAWL HINTS:
+//   Every page is marked changeFrequency: "daily" so Google
+//   re-checks them at least every 1–2 days. Combined with
+//   publishing 2 articles/day, this keeps the whole site
+//   fresh in Google's index.
 // ============================================================
 
 import type { MetadataRoute } from "next";
@@ -50,54 +56,63 @@ function buildArticleUrl(
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // -----------------------------------------------------------
   // 1 — STATIC PUBLIC PAGES
+  // Every static page marked daily so Google re-checks often.
   // -----------------------------------------------------------
+  const now = new Date();
+
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: `${SITE_URL}`,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "daily",
       priority: 1.0,
     },
     {
       url: `${SITE_URL}/about`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
+      lastModified: now,
+      changeFrequency: "daily",
       priority: 0.7,
     },
     {
       url: `${SITE_URL}/careers`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
+      lastModified: now,
+      changeFrequency: "daily",
       priority: 0.6,
     },
     {
       url: `${SITE_URL}/contact`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
+      lastModified: now,
+      changeFrequency: "daily",
       priority: 0.6,
     },
     {
       url: `${SITE_URL}/advertise`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
+      lastModified: now,
+      changeFrequency: "daily",
       priority: 0.6,
     },
     {
       url: `${SITE_URL}/ethics`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
+      lastModified: now,
+      changeFrequency: "daily",
       priority: 0.4,
     },
     {
       url: `${SITE_URL}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
+      lastModified: now,
+      changeFrequency: "daily",
       priority: 0.3,
     },
     {
       url: `${SITE_URL}/cookies`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.3,
+    },
+    {
+      url: `${SITE_URL}/terms`,
+      lastModified: now,
+      changeFrequency: "daily",
       priority: 0.3,
     },
   ];
@@ -120,8 +135,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     categoryRoutes = categories.map((c) => ({
       url: `${SITE_URL}/${c.slug}`,
-      lastModified: safeDate(c.updatedAt),
-      changeFrequency: "weekly" as const,
+      lastModified: safeDate(c.updatedAt) ?? now,
+      changeFrequency: "daily" as const,
       priority: 0.8,
     }));
   } catch (error) {
@@ -159,8 +174,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
         return {
           url: buildArticleUrl(b.category.slug, subSlug, b.slug),
-          lastModified: safeDate(b.updatedAt ?? b.publishedAt),
-          changeFrequency: "monthly" as const,
+          lastModified: safeDate(b.updatedAt ?? b.publishedAt) ?? now,
+          changeFrequency: "daily" as const,
           priority: 0.7,
         };
       });
