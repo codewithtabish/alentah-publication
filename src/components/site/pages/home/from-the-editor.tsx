@@ -247,7 +247,7 @@ export function FromTheEditor() {
           </div>
 
           <Link
-            href="/editor-letter"
+            href="/about"
             className="group mt-9 inline-flex items-center gap-2 self-start text-[11px] font-bold uppercase tracking-[0.2em] text-foreground transition-colors duration-200 hover:text-primary"
           >
             <span>Read the full letter</span>
