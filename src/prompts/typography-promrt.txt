@@ -185,3 +185,134 @@ Write an article with these details:
 - Topic / angle: {DESCRIBE WHAT YOU WANT}
 - Key points to cover: {LIST 3–5 POINTS}
 - Tone notes: {optional}
+
+
+
+
+/// the heianag and paraah styel chnage 
+
+
+
+
+
+You are given a block of raw HTML for an article. Rewrite ONLY the class
+attributes on <h1>–<h6> and on <p> elements to match the ALENTAH editorial
+style rules below. Do not change any other markup, text, ids, structure,
+attributes, or elements. Return the full HTML block.
+
+================================================================
+RULE 1 — HEADINGS (h1, h2, h3, h4, h5, h6)
+================================================================
+
+Every heading must use a MOBILE-FIRST scale — small on phones, grows
+cleanly across breakpoints. Never use bare Tailwind named sizes
+(text-3xl, text-4xl, etc.) on their own, because they render too large
+on mobile.
+
+For <h1> and <h2>, add (or replace) the class with exactly these tokens
+in this order:
+
+  scroll-mt-24
+  text-[1.125rem] font-bold leading-[1.3] tracking-[-0.015em]
+  text-foreground
+  sm:text-2xl sm:leading-[1.25]
+  md:text-[1.75rem] md:leading-[1.2]
+  lg:text-[2.125rem] lg:leading-[1.15]
+
+Example — final class attribute:
+
+  class="scroll-mt-24 text-[1.125rem] font-bold leading-[1.3] tracking-[-0.015em] text-foreground sm:text-2xl sm:leading-[1.25] md:text-[1.75rem] md:leading-[1.2] lg:text-[2.125rem] lg:leading-[1.15]"
+
+For <h3>, use the same pattern one step smaller:
+
+  class="scroll-mt-24 text-[1.0625rem] font-bold leading-[1.3] tracking-[-0.01em] text-foreground sm:text-xl sm:leading-[1.25] md:text-2xl md:leading-[1.2] lg:text-[1.625rem] lg:leading-[1.15]"
+
+For <h4>, one step smaller again:
+
+  class="scroll-mt-24 text-[1rem] font-semibold leading-[1.35] tracking-normal text-foreground sm:text-[1.0625rem] md:text-[1.125rem] lg:text-[1.1875rem]"
+
+For <h5> and <h6>, use:
+
+  class="scroll-mt-24 text-[0.9375rem] font-semibold leading-[1.4] text-foreground sm:text-[1rem] md:text-[1.0625rem]"
+
+Preserve the existing id attribute on every heading. Do not change
+anchor targets.
+
+================================================================
+RULE 2 — BODY PARAGRAPHS
+================================================================
+
+Every content paragraph must be JUSTIFIED ON EVERY SCREEN, including
+mobile, with soft hyphens enabled and the last line kept left-aligned
+so a short final line doesn't stretch its spaces into ugly gaps.
+
+Add (or replace) the paragraph's class with exactly these tokens:
+
+  text-justify
+  text-lg
+  leading-8
+  text-muted-foreground
+  [text-align-last:left]
+  [hyphens:auto]
+
+Example — final class attribute:
+
+  class="text-justify text-lg leading-8 text-muted-foreground [text-align-last:left] [hyphens:auto]"
+
+The token order matters: text-justify first, then the size and color,
+then the two bracket utilities.
+
+================================================================
+WHICH PARAGRAPHS TO STYLE
+================================================================
+
+Apply the paragraph rule to:
+  - All body copy paragraphs
+  - Paragraphs inside pull-quote / "principle" boxes (the ones sitting
+    in <div class="border-l-2 border-primary/40 pl-5">)
+
+For pull-quote paragraphs, keep their existing text-base leading-7
+sizing and only add the justification tokens:
+
+  class="text-justify text-base leading-7 text-muted-foreground [text-align-last:left] [hyphens:auto]"
+
+DO NOT apply the paragraph rule to:
+  - The eyebrow line (the small uppercase tracking label, e.g.
+    "TECHNOLOGY · SOFTWARE & DEVELOPMENT"). Leave its class unchanged.
+  - Caption paragraphs beneath callouts, stat blocks, tables, or images
+    (usually <p class="...text-sm text-muted-foreground"> immediately
+    after a rounded callout container). Leave those unchanged.
+  - Paragraphs inside stat cards / data grids where text is centered.
+    Leave those unchanged.
+  - The heading itself (h2 / h3) — that gets Rule 1, not Rule 2.
+
+If unsure: text inside rounded callout boxes (bg-muted/40, bg-background
+with border) that is centered or already has text-xs / text-sm is a
+caption, not body copy — leave it alone.
+
+================================================================
+WHAT NOT TO TOUCH
+================================================================
+
+  - Do not change any text content, capitalization, or punctuation.
+  - Do not change ids, anchors, hrefs, or data attributes.
+  - Do not touch <table>, <thead>, <tbody>, <tr>, <th>, <td>.
+  - Do not touch <ul>, <ol>, <li>.
+  - Do not touch <strong>, <em>, <code>, <a>.
+  - Do not touch <div>, <span>, <section> wrappers.
+  - Do not reorder, remove, or add elements.
+  - Do not reformat whitespace or line breaks unnecessarily.
+  - Do not add comments.
+
+================================================================
+OUTPUT
+================================================================
+
+Return the complete HTML block, with only the class attributes on
+headings and paragraphs changed. Everything else byte-for-byte
+identical. No explanation, no markdown fence around the output unless
+I ask for it.
+
+Now here is the HTML:
+
+[PASTE YOUR RAW HTML HERE]

@@ -6,15 +6,19 @@
 // Plain surface, no shadow, no scrolled state changes.
 // Animated hamburger → X icon trigger on the left.
 // HIDDEN on /admin routes.
+//
+// Right-side actions:
+//   - Saved (bookmark icon) → /signed-in only → links to /saved
+//   - ModeToggle (theme)
+//   - Login (signed out) / User menu (signed in)
 // ============================================================
 
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Search,
-  LogOut,
   Bookmark,
+  LogOut,
   User as UserIcon,
 } from "lucide-react";
 import { SignInButton, useUser, useClerk, Show } from "@clerk/nextjs";
@@ -73,6 +77,8 @@ export function NavbarClient({ categories }: NavbarClientProps) {
 
   const isAdminRoute =
     pathname === "/admin" || pathname.startsWith("/admin/");
+
+  const isSavedRoute = pathname === "/saved";
 
   // Show only active categories + active subs
   const visibleCategories = React.useMemo(
@@ -413,18 +419,28 @@ export function NavbarClient({ categories }: NavbarClientProps) {
             {/* ============================================================
                 RIGHT — actions
                 ============================================================ */}
-            <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
-              <button
-                type="button"
-                aria-label="Search"
-                className={cn(
-                  "hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full",
-                  "text-foreground/60 hover:text-primary hover:bg-accent",
-                  "transition-colors duration-200",
-                )}
-              >
-                <Search className="h-[17px] w-[17px]" strokeWidth={1.75} />
-              </button>
+            <div className="flex shrink-0 items-center gap-0.5 sm:gap-1.5">
+              {/* SAVED — bookmark icon, only when signed in */}
+              <Show when="signed-in">
+                <Link
+                  href="/saved"
+                  aria-label="Saved articles"
+                  title="Saved articles"
+                  className={cn(
+                    "inline-flex h-9 w-9 items-center justify-center rounded-full",
+                    "transition-colors duration-200",
+                    isSavedRoute
+                      ? "bg-primary/10 text-primary"
+                      : "text-foreground/60 hover:bg-accent hover:text-primary",
+                  )}
+                >
+                  <Bookmark
+                    className="h-[17px] w-[17px]"
+                    strokeWidth={1.75}
+                    fill={isSavedRoute ? "currentColor" : "none"}
+                  />
+                </Link>
+              </Show>
 
               <ModeToggle />
 
@@ -610,6 +626,7 @@ export function NavbarSkeleton() {
             <div className="h-4 w-20 rounded bg-muted" />
           </div>
           <div className="flex items-center gap-2">
+            <div className="size-8 rounded-full bg-muted" />
             <div className="size-8 rounded-full bg-muted" />
             <div className="h-8 w-16 rounded-full bg-muted" />
           </div>

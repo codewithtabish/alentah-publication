@@ -1,19 +1,151 @@
 // src/app/(site)/advertise/page.tsx
 // ============================================================
 // Advertise — ALENTAH
-// Editorial Advertise page: hero, numbers, audience, formats,
-// what we don't do, commitments, how it works, contact CTA,
-// FAQ, closing strip.
-// Includes a back button at the top.
-// No horizontal padding on page-level elements — the global
-// Container handles it. No bg-background on any panel.
+// Server component. Owns SEO metadata + JSON-LD structured data.
+// The back button is a small client component (BackButton).
 // ============================================================
 
-"use client";
-
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import type { Metadata } from "next";
+import { ArrowRight } from "lucide-react";
+import { BackButton } from "@/components/site/general/backs/back-button";
+
+
+// ============================================================
+// SEO METADATA
+// ============================================================
+
+const SITE_URL = "https://www.alentah.com";
+
+export const metadata: Metadata = {
+  title: "Advertise with Alentah — Reach Curious Minds",
+  description:
+    "Reach 180,000 monthly readers who actually read. Long-form editorial partnerships, considered display placements, newsletter sponsorships, and custom research for brands aligned with our editorial standards.",
+  keywords: [
+    "advertise on Alentah",
+    "Alentah advertising",
+    "editorial partnership",
+    "sponsored content",
+    "media kit",
+    "newsletter sponsorship",
+    "custom research",
+    "brand partnership",
+    "long-form publishing",
+    "developer audience",
+    "technology advertising",
+  ],
+  alternates: {
+    canonical: "/advertise",
+  },
+  openGraph: {
+    type: "website",
+    url: "/advertise",
+    siteName: "Alentah",
+    title: "Advertise with Alentah — Reach Curious Minds",
+    description:
+      "Long-form editorial partnerships, considered display placements, and newsletter sponsorships for brands aligned with our editorial standards.",
+    images: [
+      {
+        url: "/seo/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Advertise with Alentah",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Advertise with Alentah — Reach Curious Minds",
+    description:
+      "Long-form editorial partnerships, considered display placements, and newsletter sponsorships for brands aligned with our editorial standards.",
+    images: ["/seo/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+// ============================================================
+// STRUCTURED DATA (JSON-LD)
+// ============================================================
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: SITE_URL,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Advertise",
+      item: `${SITE_URL}/advertise`,
+    },
+  ],
+};
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Do you accept sponsored articles?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. We partner with brands for long-form, high-quality content that aligns with our editorial standards.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How many partners do you work with at once?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "We work with a small number of partners so that placements stay rare, considered, and effective.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I see anonymized reader data?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. We can share aggregated, anonymized audience insights upon request.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Do you offer performance-based pricing?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "We don't offer performance-based pricing. Our value is in quality, not volume.",
+      },
+    },
+  ],
+};
+
+const serviceJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: "Alentah Advertising & Partnerships",
+  provider: {
+    "@type": "Organization",
+    name: "Alentah",
+    url: SITE_URL,
+  },
+  serviceType: "Editorial Partnership, Display Advertising, Newsletter Sponsorship, Custom Research",
+  areaServed: "Worldwide",
+  audience: {
+    "@type": "Audience",
+    audienceType: "Brands, technology companies, and research organizations",
+  },
+  description:
+    "Long-form editorial partnerships, considered display placements, newsletter sponsorships, and custom research for brands aligned with our editorial standards.",
+};
 
 // ============================================================
 // DATA
@@ -133,34 +265,32 @@ const FAQ = [
 // ============================================================
 
 export default function AdvertisePage() {
-  const router = useRouter();
-
-  const handleBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
-  };
-
   return (
     <main className="w-full">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqJsonLd),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(serviceJsonLd),
+        }}
+      />
+
       {/* =====================================================
           BACK BUTTON
           ===================================================== */}
-      <div className="pt-8 sm:pt-10">
-        <button
-          type="button"
-          onClick={handleBack}
-          aria-label="Go back"
-          className="group inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <span className="flex size-7 items-center justify-center rounded-full border border-border transition-colors group-hover:border-primary/40">
-            <ArrowLeft className="size-3.5" aria-hidden="true" />
-          </span>
-          <span>Back</span>
-        </button>
-      </div>
+      <BackButton />
 
       {/* =====================================================
           HERO

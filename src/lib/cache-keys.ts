@@ -33,6 +33,12 @@ export const CACHE_TAGS = {
   // ── Comments ──
   comments: (blogId: string) => `comments:${blogId}`,
 
+  // ── Bookmarks ──
+  bookmarks: (userId: string) => `bookmarks:${userId}`,
+  bookmarkStatus: (userId: string, blogId: string) =>
+    `bookmark:${userId}:${blogId}`,
+  userSaved: (clerkId: string) => `user:saved:${clerkId}`,
+
   // ── Newsletter ──
   newsletterSubscribers: "newsletter:subscribers",
 
@@ -200,6 +206,25 @@ export function revalidateComments(blogId: string, blogSlug?: string) {
   if (blogSlug) {
     revalidateTag(CACHE_TAGS.blog(blogSlug), NOW);
   }
+}
+
+// ─────────────────────────────────────────────
+// BOOKMARKS
+// ─────────────────────────────────────────────
+
+/**
+ * Revalidate ONE user's bookmark state + the saved-list page.
+ * Call after: saving or unsaving a blog.
+ */
+export function revalidateBookmark(
+  clerkId: string,
+  userId: string,
+  blogId: string,
+) {
+  revalidateTag(CACHE_TAGS.bookmarkStatus(userId, blogId), NOW);
+  revalidateTag(CACHE_TAGS.bookmarks(userId), NOW);
+  revalidateTag(CACHE_TAGS.userSaved(clerkId), NOW);
+  revalidatePath("/saved");
 }
 
 // ─────────────────────────────────────────────

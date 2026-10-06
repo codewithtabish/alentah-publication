@@ -1,19 +1,128 @@
 // src/app/(site)/careers/page.tsx
 // ============================================================
 // Careers — ALENTAH
-// Editorial Careers page: hero, why us, empty-state openings,
-// reach out, what we look for, how we hire, closing strip.
-// Includes a back button at the top.
-// No horizontal padding on page-level elements — the global
-// Container handles it. No backgrounds on panels — typography
-// and hairlines only.
+// Server component. Owns SEO metadata + JSON-LD structured data.
+// The back button is the shared BackButton client component.
 // ============================================================
 
-"use client";
-
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import type { Metadata } from "next";
+import { ArrowRight } from "lucide-react";
+import { BackButton } from "@/components/site/general/backs/back-button";
+
+
+// ============================================================
+// SEO METADATA
+// ============================================================
+
+const SITE_URL = "https://www.alentah.com";
+
+export const metadata: Metadata = {
+  title: "Careers at Alentah — Build Slow Journalism With Us",
+  description:
+    "We are a small, independent editorial team. We hire slowly, write carefully, and ship work we are proud to sign. Join Alentah — editorial, engineering, and design roles as the team grows.",
+  keywords: [
+    "Alentah careers",
+    "work at Alentah",
+    "editorial jobs",
+    "writing jobs",
+    "remote editorial jobs",
+    "long-form journalism jobs",
+    "independent publication careers",
+    "media jobs",
+    "engineering jobs at Alentah",
+    "design jobs at Alentah",
+    "Talha Tabish",
+  ],
+  alternates: {
+    canonical: "/careers",
+  },
+  openGraph: {
+    type: "website",
+    url: "/careers",
+    siteName: "Alentah",
+    title: "Careers at Alentah — Build Slow Journalism With Us",
+    description:
+      "A small, independent editorial team. We hire slowly, write carefully, and ship work we are proud to sign.",
+    images: [
+      {
+        url: "/seo/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Careers at Alentah",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Careers at Alentah — Build Slow Journalism With Us",
+    description:
+      "A small, independent editorial team. We hire slowly, write carefully, and ship work we are proud to sign.",
+    images: ["/seo/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+// ============================================================
+// STRUCTURED DATA (JSON-LD)
+// ============================================================
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: SITE_URL,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Careers",
+      item: `${SITE_URL}/careers`,
+    },
+  ],
+};
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Alentah",
+  url: SITE_URL,
+  logo: `${SITE_URL}/seo/icon-512.png`,
+  description:
+    "An independent editorial publication covering technology, business, finance, lifestyle, culture, travel, health, science, and design.",
+  founder: {
+    "@type": "Person",
+    name: "Talha Tabish",
+    jobTitle: "Editor-in-Chief",
+  },
+  sameAs: [],
+};
+
+const webPageJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: "Careers at Alentah",
+  url: `${SITE_URL}/careers`,
+  description:
+    "We are a small, independent editorial team. We hire slowly, write carefully, and ship work we are proud to sign.",
+  inLanguage: "en",
+  isPartOf: {
+    "@type": "WebSite",
+    name: "Alentah",
+    url: SITE_URL,
+  },
+  about: {
+    "@type": "Thing",
+    name: "Careers in independent publishing, editorial, and product",
+  },
+};
 
 // ============================================================
 // DATA
@@ -71,34 +180,32 @@ const HIRING_STEPS = [
 // ============================================================
 
 export default function CareersPage() {
-  const router = useRouter();
-
-  const handleBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
-  };
-
   return (
     <main className="w-full">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(organizationJsonLd),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(webPageJsonLd),
+        }}
+      />
+
       {/* =====================================================
           BACK BUTTON
           ===================================================== */}
-      <div className="pt-8 sm:pt-10">
-        <button
-          type="button"
-          onClick={handleBack}
-          aria-label="Go back"
-          className="group inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <span className="flex size-7 items-center justify-center rounded-full border border-border transition-colors group-hover:border-primary/40">
-            <ArrowLeft className="size-3.5" aria-hidden="true" />
-          </span>
-          <span>Back</span>
-        </button>
-      </div>
+      <BackButton />
 
       {/* =====================================================
           HERO

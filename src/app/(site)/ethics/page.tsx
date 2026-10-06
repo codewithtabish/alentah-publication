@@ -1,45 +1,144 @@
 // src/app/(site)/ethics/page.tsx
 // ============================================================
 // Ethics — ALENTAH
-// Editorial Ethics Policy page: hero, sticky TOC + body,
-// numbered commitments list, closing strip.
-//
-// Back button behaviour:
-//   - Shows when there is browser history to return to.
-//   - Uses Next.js useRouter for the actual navigation.
-//   - Falls back to "/" when there is no history.
-//
-// No horizontal padding on page-level elements — the global
-// Container handles it. No bg-background on any panel.
+// Server component. Owns SEO metadata + JSON-LD structured data.
+// The scroll-spy TOC lives in EthicsSidebar (client).
+// The back button is the shared BackButton.
 // ============================================================
 
-"use client";
+import { EthicsSidebar } from "@/components/site/ethics/ethics-sidebar";
+import { BackButton } from "@/components/site/general/backs/back-button";
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+
+// ============================================================
+// SEO METADATA
+// ============================================================
+
+const SITE_URL = "https://www.alentah.com";
+
+export const metadata: Metadata = {
+  title: "Editorial Ethics — Alentah's Principles & Standards",
+  description:
+    "How Alentah works, and what we stand for. Independence, funding, sources, corrections, use of AI, sponsored content, reader data, and accountability — the principles behind every story we publish.",
+  keywords: [
+    "editorial ethics",
+    "Alentah ethics",
+    "journalism ethics",
+    "media ethics policy",
+    "editorial independence",
+    "corrections policy",
+    "AI in journalism",
+    "sponsored content policy",
+    "reader data policy",
+    "accountability in media",
+    "newsroom standards",
+  ],
+  alternates: {
+    canonical: "/ethics",
+  },
+  openGraph: {
+    type: "website",
+    url: "/ethics",
+    siteName: "Alentah",
+    title: "Editorial Ethics — Alentah's Principles & Standards",
+    description:
+      "Independence, funding, sources, corrections, AI, sponsored content, reader data, and accountability — the principles behind every story we publish.",
+    images: [
+      {
+        url: "/seo/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Editorial Ethics — Alentah",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Editorial Ethics — Alentah's Principles & Standards",
+    description:
+      "Independence, funding, sources, corrections, AI, sponsored content, reader data, and accountability — the principles behind every story we publish.",
+    images: ["/seo/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+// ============================================================
+// STRUCTURED DATA (JSON-LD)
+// ============================================================
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: SITE_URL,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Ethics",
+      item: `${SITE_URL}/ethics`,
+    },
+  ],
+};
+
+const webPageJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: "Editorial Ethics — Alentah",
+  url: `${SITE_URL}/ethics`,
+  description:
+    "Alentah's editorial ethics: independence, funding, sources, corrections, AI, sponsored content, reader data, and accountability.",
+  inLanguage: "en",
+  dateModified: "2026-10-05",
+  isPartOf: {
+    "@type": "WebSite",
+    name: "Alentah",
+    url: SITE_URL,
+  },
+  publisher: {
+    "@type": "Organization",
+    name: "Alentah",
+    url: SITE_URL,
+    logo: `${SITE_URL}/seo/icon-512.png`,
+  },
+};
 
 // ============================================================
 // DATA
 // ============================================================
 
 const SECTIONS = [
-  { id: "our-commitments", label: "Our commitments", eyebrow: "Our commitments" },
-  { id: "independence", label: "Independence", eyebrow: "Independence" },
-  { id: "funding-and-advertising", label: "Funding and advertising", eyebrow: "Funding and advertising" },
-  { id: "sources-and-attribution", label: "Sources and attribution", eyebrow: "Sources and attribution" },
-  { id: "corrections", label: "Corrections", eyebrow: "Corrections" },
-  { id: "use-of-ai-in-our-work", label: "Use of AI in our work", eyebrow: "Use of AI in our work" },
-  { id: "sponsored-content", label: "Sponsored content", eyebrow: "Sponsored content" },
-  { id: "reader-data", label: "Reader data", eyebrow: "Reader data" },
-  { id: "complaints-and-accountability", label: "Complaints and accountability", eyebrow: "Complaints and accountability" },
-  { id: "contact-us", label: "Contact us", eyebrow: "Contact us" },
+  { id: "our-commitments", label: "Our commitments" },
+  { id: "independence", label: "Independence" },
+  { id: "funding-and-advertising", label: "Funding and advertising" },
+  { id: "sources-and-attribution", label: "Sources and attribution" },
+  { id: "corrections", label: "Corrections" },
+  { id: "use-of-ai-in-our-work", label: "Use of AI in our work" },
+  { id: "sponsored-content", label: "Sponsored content" },
+  { id: "reader-data", label: "Reader data" },
+  {
+    id: "complaints-and-accountability",
+    label: "Complaints and accountability",
+  },
+  { id: "contact-us", label: "Contact us" },
 ];
 
 const COMMITMENTS = [
   { number: "01", body: "We seek truth, not clicks." },
   { number: "02", body: "We give a voice to underrepresented perspectives." },
-  { number: "03", body: "We are transparent about our process and our mistakes." },
+  {
+    number: "03",
+    body: "We are transparent about our process and our mistakes.",
+  },
   { number: "04", body: "We put our readers first, always." },
 ];
 
@@ -48,106 +147,29 @@ const COMMITMENTS = [
 // ============================================================
 
 export default function EthicsPage() {
-  const router = useRouter();
-
-  const [activeId, setActiveId] = useState<string>("our-commitments");
-  const [hasHistory, setHasHistory] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setHasHistory(window.history.length > 1);
-  }, []);
-
-  const handleBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
-  };
-
-  // Scroll-spy
-  useEffect(() => {
-    const headings = SECTIONS.map((s) => document.getElementById(s.id)).filter(
-      (el): el is HTMLElement => Boolean(el),
-    );
-
-    if (headings.length === 0) return;
-
-    let ticking = false;
-
-    const update = () => {
-      const offset = 140;
-      let current = headings[0]?.id ?? "";
-
-      for (const el of headings) {
-        if (el.getBoundingClientRect().top <= offset) {
-          current = el.id;
-        } else {
-          break;
-        }
-      }
-
-      setActiveId(current);
-      ticking = false;
-    };
-
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      window.requestAnimationFrame(update);
-    };
-
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
-
-  const handleTocClick = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    id: string,
-  ) => {
-    e.preventDefault();
-    const target = document.getElementById(id);
-    if (!target) return;
-    setActiveId(id);
-    window.requestAnimationFrame(() => {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  };
-
   return (
     <main className="w-full">
-      {/* BACK BUTTON — only when there is history */}
-      {hasHistory && (
-        <div className="pt-8 sm:pt-10">
-          <button
-            type="button"
-            onClick={handleBack}
-            aria-label="Go back"
-            className="group inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <span className="flex size-7 items-center justify-center rounded-full border border-border transition-colors group-hover:border-primary/40">
-              <ArrowLeft className="size-3.5" aria-hidden="true" />
-            </span>
-            <span>Back</span>
-          </button>
-        </div>
-      )}
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(webPageJsonLd),
+        }}
+      />
+
+      {/* BACK BUTTON — hidden when there is no history to return to */}
+      <BackButton />
 
       {/* HERO */}
       <section
         aria-labelledby="ethics-heading"
-        className={
-          hasHistory
-            ? "pt-10 sm:pt-12 lg:pt-14"
-            : "pt-16 sm:pt-20 lg:pt-24"
-        }
+        className="pt-10 sm:pt-12 lg:pt-14"
       >
         <div aria-hidden="true" className="h-px w-full bg-border" />
 
@@ -178,50 +200,8 @@ export default function EthicsPage() {
 
       {/* SIDEBAR + BODY */}
       <div className="mt-16 grid grid-cols-1 gap-12 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-16 xl:gap-20">
-        {/* STICKY TOC */}
-        <aside className="hidden lg:block">
-          <nav
-            aria-label="On this page"
-            className="sticky top-24 rounded-xl border border-border p-6"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground">
-              On this page
-            </p>
-
-            <ul className="mt-5 space-y-1">
-              {SECTIONS.map((section) => {
-                const isActive = activeId === section.id;
-
-                return (
-                  <li key={section.id}>
-                    <a
-                      href={`#${section.id}`}
-                      onClick={(e) => handleTocClick(e, section.id)}
-                      aria-current={isActive ? "location" : undefined}
-                      className={[
-                        "group relative flex items-center rounded-md py-2 pl-4 pr-3",
-                        "text-[13px] leading-tight",
-                        "transition-colors duration-200",
-                        isActive
-                          ? "bg-muted/40 font-medium text-foreground"
-                          : "text-muted-foreground hover:text-foreground",
-                      ].join(" ")}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={[
-                          "absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[2px] rounded-full transition-opacity duration-200",
-                          isActive ? "bg-primary opacity-100" : "opacity-0",
-                        ].join(" ")}
-                      />
-                      {section.label}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        </aside>
+        {/* STICKY TOC — client component */}
+        <EthicsSidebar sections={SECTIONS} />
 
         {/* BODY */}
         <article className="min-w-0">
@@ -453,7 +433,7 @@ function Section({
   eyebrow: string;
   heading: string;
   last?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section

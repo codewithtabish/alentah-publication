@@ -1,17 +1,129 @@
 // src/app/(site)/contact/page.tsx
 // ============================================================
 // Contact — ALENTAH
-// Editorial contact page: hero, direct emails, form, response
-// promise, where we work, press, closing strip.
-// Includes a back button at the top.
-// No horizontal padding — the global Container handles it.
+// Server component. Owns SEO metadata + JSON-LD structured data.
+// The back button is the shared BackButton client component.
 // ============================================================
 
-"use client";
-
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import type { Metadata } from "next";
+import { ArrowRight } from "lucide-react";
+import { BackButton } from "@/components/site/general/backs/back-button";
+
+
+// ============================================================
+// SEO METADATA
+// ============================================================
+
+const SITE_URL = "https://www.alentah.com";
+
+export const metadata: Metadata = {
+  title: "Contact Alentah — Editorial, Corrections & Partnerships",
+  description:
+    "Write to us. Pitches, corrections, partnerships, and press enquiries — we read every message and reply within 5–7 days. Reach the editorial team at hello@alentah.com.",
+  keywords: [
+    "contact Alentah",
+    "Alentah email",
+    "editorial contact",
+    "pitch to Alentah",
+    "corrections",
+    "press enquiries",
+    "partnerships",
+    "media enquiries",
+    "Alentah press kit",
+    "write for Alentah",
+    "Talha Tabish contact",
+  ],
+  alternates: {
+    canonical: "/contact",
+  },
+  openGraph: {
+    type: "website",
+    url: "/contact",
+    siteName: "Alentah",
+    title: "Contact Alentah — Editorial, Corrections & Partnerships",
+    description:
+      "Pitches, corrections, partnerships, and press enquiries. We read every message and reply within 5–7 days.",
+    images: [
+      {
+        url: "/seo/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Contact Alentah",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Contact Alentah — Editorial, Corrections & Partnerships",
+    description:
+      "Pitches, corrections, partnerships, and press enquiries. We read every message and reply within 5–7 days.",
+    images: ["/seo/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+// ============================================================
+// STRUCTURED DATA (JSON-LD)
+// ============================================================
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: SITE_URL,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Contact",
+      item: `${SITE_URL}/contact`,
+    },
+  ],
+};
+
+const contactPageJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ContactPage",
+  name: "Contact Alentah",
+  url: `${SITE_URL}/contact`,
+  description:
+    "Write to the editorial team at Alentah — pitches, corrections, partnerships, and press enquiries.",
+  inLanguage: "en",
+  mainEntity: {
+    "@type": "Organization",
+    name: "Alentah",
+    url: SITE_URL,
+    logo: `${SITE_URL}/seo/icon-512.png`,
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "Editorial",
+        email: "hello@alentah.com",
+        availableLanguage: ["English", "Urdu"],
+      },
+      {
+        "@type": "ContactPoint",
+        contactType: "Corrections",
+        email: "corrections@alentah.com",
+        availableLanguage: ["English", "Urdu"],
+      },
+      {
+        "@type": "ContactPoint",
+        contactType: "Partnerships",
+        email: "partners@alentah.com",
+        availableLanguage: ["English", "Urdu"],
+      },
+    ],
+  },
+};
 
 // ============================================================
 // DATA
@@ -55,34 +167,26 @@ const PROMISES = [
 // ============================================================
 
 export default function ContactPage() {
-  const router = useRouter();
-
-  const handleBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
-  };
-
   return (
     <main className="w-full">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(contactPageJsonLd),
+        }}
+      />
+
       {/* =====================================================
           BACK BUTTON
           ===================================================== */}
-      <div className="pt-8 sm:pt-10">
-        <button
-          type="button"
-          onClick={handleBack}
-          aria-label="Go back"
-          className="group inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <span className="flex size-7 items-center justify-center rounded-full border border-border bg-background transition-colors group-hover:border-primary/40 group-hover:bg-primary/10">
-            <ArrowLeft className="size-3.5" aria-hidden="true" />
-          </span>
-          <span>Back</span>
-        </button>
-      </div>
+      <BackButton />
 
       {/* =====================================================
           HERO

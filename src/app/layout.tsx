@@ -11,11 +11,8 @@ import {
 import "./globals.css";
 
 import { cn } from "@/lib/utils";
-
 import { ThemeProvider } from "@/components/site/general/theme/theme-provider";
-
 import { ClerkProvider } from "@clerk/nextjs";
-
 import { Toaster } from "sonner";
 import { ExitIntentPopup } from "@/components/site/general/navbars/exit-intent-popup";
 
@@ -55,6 +52,16 @@ const fontMono = Geist_Mono({
 });
 
 // ============================================
+// SITE CONSTANTS
+// ============================================
+
+const SITE_URL = "https://www.alentah.com";
+const SITE_NAME = "Alentah";
+const SITE_TAGLINE = "Slow Journalism for Curious Minds";
+const SITE_DESCRIPTION =
+  "An independent editorial publication covering technology, business, finance, lifestyle, culture, travel, health, science, design, art, food, sports, politics, environment, education, and books. Edited by Talha Tabish.";
+
+// ============================================
 // VIEWPORT
 // ============================================
 
@@ -72,6 +79,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  colorScheme: "light dark",
 };
 
 // ============================================
@@ -79,105 +87,154 @@ export const viewport: Viewport = {
 // ============================================
 
 export const metadata: Metadata = {
+  // Resolves every relative URL below into a full https://www.alentah.com/... URL
+  metadataBase: new URL(SITE_URL),
+
   title: {
-    default: "Alentah — Slow Journalism for Curious Minds",
-    template: "%s | Alentah",
+    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    template: `%s | ${SITE_NAME}`,
   },
 
-  description:
-    "An independent editorial publication covering technology, lifestyle, finance, culture, and travel. Edited by Talha Tabish.",
+  description: SITE_DESCRIPTION,
 
-  applicationName: "Alentah",
+  applicationName: SITE_NAME,
+
+  generator: "Next.js",
+
+  referrer: "origin-when-cross-origin",
 
   keywords: [
     "Alentah",
     "editorial publication",
     "slow journalism",
+    "long-form journalism",
     "technology",
     "lifestyle",
     "finance",
     "culture",
     "travel",
+    "health",
+    "science",
+    "design",
     "Talha Tabish",
   ],
 
-  authors: [{ name: "Talha Tabish" }],
-
+  authors: [{ name: "Talha Tabish", url: SITE_URL }],
   creator: "Talha Tabish",
+  publisher: SITE_NAME,
 
-  publisher: "Alentah",
+  category: undefined,
 
-  icons: {
-    icon: [
-      {
-        url: "/favicon.ico",
-      },
-      {
-        url: "/icon.png",
-        type: "image/png",
-        sizes: "512x512",
-      },
-    ],
-
-    apple: [
-      {
-        url: "/apple-icon.png",
-        sizes: "180x180",
-      },
-    ],
-
-    shortcut: "/favicon.ico",
+  // Prevent Safari from auto-linking phone numbers, addresses, emails
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
   },
 
-  manifest: "/manifest.json",
+  // ─── Canonical for the homepage ───
+  alternates: {
+    canonical: "/",
+  },
 
+  // ─── iOS / PWA ───
+  appleWebApp: {
+    capable: true,
+    title: SITE_NAME,
+    statusBarStyle: "default",
+  },
+
+  // ─── Open Graph ───
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://alentah.com",
-    siteName: "Alentah",
-    title: "Alentah — Slow Journalism for Curious Minds",
-
-    description:
-      "An independent editorial publication covering technology, lifestyle, finance, culture, and travel.",
-
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
     images: [
       {
-        url: "/og-image.png",
+        url: "/seo/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Alentah — Slow Journalism",
+        alt: `${SITE_NAME} — ${SITE_TAGLINE}`,
+        type: "image/png",
       },
     ],
   },
 
+  // ─── Twitter / X ───
   twitter: {
     card: "summary_large_image",
-
-    title: "Alentah — Slow Journalism for Curious Minds",
-
-    description:
-      "An independent editorial publication covering technology, lifestyle, finance, culture, and travel.",
-
-    images: ["/og-image.png"],
-
+    site: "@alentah",
     creator: "@alentah",
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+    images: ["/seo/og-image.png"],
   },
 
+  // ─── Robots ───
   robots: {
     index: true,
     follow: true,
-
+    nocache: false,
     googleBot: {
       index: true,
       follow: true,
+      noimageindex: false,
       "max-video-preview": -1,
       "max-image-preview": "large",
       "max-snippet": -1,
     },
   },
 
-  category: "news",
+  // ─── Google Search Console verification ───
+  // Replace with your actual token from GSC → Settings → Ownership verification
+  // verification: {
+  //   google: "your-google-verification-token",
+  // },
+
+  // ─── Extra meta tags ───
+  other: {
+    "msapplication-TileColor": "#6B4A2F",
+    "msapplication-config": "/browserconfig.xml",
+  },
+};
+
+// ============================================
+// JSON-LD STRUCTURED DATA
+// ============================================
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: SITE_NAME,
+  url: SITE_URL,
+  logo: `${SITE_URL}/seo/icon-512.png`,
+  description: SITE_DESCRIPTION,
+  founder: {
+    "@type": "Person",
+    name: "Talha Tabish",
+  },
+  sameAs: [
+    // Add your real social profile URLs here
+    // "https://twitter.com/alentah",
+    // "https://www.linkedin.com/company/alentah",
+  ],
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
+  inLanguage: "en",
+  publisher: {
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+  },
 };
 
 // ============================================
@@ -229,20 +286,13 @@ const clerkAppearance = {
     borderRadius: "1rem",
 
     fontFamily: "var(--font-jakarta), ui-sans-serif, sans-serif",
-
-    fontFamilyButtons:
-      "var(--font-jakarta), ui-sans-serif, sans-serif",
+    fontFamilyButtons: "var(--font-jakarta), ui-sans-serif, sans-serif",
 
     fontSize: "0.875rem",
-
     spacingUnit: "1rem",
   },
 
   elements: {
-    // ========================================
-    // MODAL
-    // ========================================
-
     rootBox: "font-sans",
 
     card: cn(
@@ -256,9 +306,7 @@ const clerkAppearance = {
     ),
 
     modalBackdrop: "bg-background/70 backdrop-blur-md",
-
-    modalContent:
-      "bg-card text-card-foreground rounded-3xl",
+    modalContent: "bg-card text-card-foreground rounded-3xl",
 
     modalCloseButton: cn(
       "text-muted-foreground hover:text-foreground",
@@ -266,25 +314,14 @@ const clerkAppearance = {
       "transition-colors",
     ),
 
-    // ========================================
-    // HEADER
-    // ========================================
-
     headerTitle: cn(
       "font-serif text-foreground text-2xl",
       "tracking-tight font-normal text-center",
     ),
-
-    headerSubtitle:
-      "text-muted-foreground text-sm text-center",
+    headerSubtitle: "text-muted-foreground text-sm text-center",
 
     logoBox: "hidden",
-
     logoImage: "hidden",
-
-    // ========================================
-    // SOCIAL BUTTONS
-    // ========================================
 
     socialButtonsBlockButton: cn(
       "border border-border bg-card text-foreground",
@@ -293,26 +330,15 @@ const clerkAppearance = {
       "transition-all duration-200",
       "shadow-none",
     ),
-
     socialButtonsBlockButtonText: cn(
       "text-foreground text-sm font-medium",
       "normal-case tracking-normal",
     ),
-
     socialButtonsProviderIcon: "w-5 h-5",
 
-    // ========================================
-    // DIVIDER
-    // ========================================
-
     dividerLine: "bg-border",
-
     dividerText:
       "text-muted-foreground text-[10px] uppercase tracking-[0.2em]",
-
-    // ========================================
-    // FORM
-    // ========================================
 
     formFieldLabel:
       "text-foreground text-[11px] font-medium uppercase tracking-[0.15em]",
@@ -328,19 +354,9 @@ const clerkAppearance = {
 
     formFieldInputShowPasswordButton:
       "text-muted-foreground hover:text-foreground",
-
-    formFieldErrorText:
-      "text-destructive text-xs",
-
-    formFieldSuccessText:
-      "text-primary text-xs",
-
-    formFieldHintText:
-      "text-muted-foreground text-xs",
-
-    // ========================================
-    // PRIMARY BUTTON
-    // ========================================
+    formFieldErrorText: "text-destructive text-xs",
+    formFieldSuccessText: "text-primary text-xs",
+    formFieldHintText: "text-muted-foreground text-xs",
 
     formButtonPrimary: cn(
       "bg-primary text-primary-foreground",
@@ -351,53 +367,22 @@ const clerkAppearance = {
       "transition-all duration-200",
       "shadow-none normal-case",
     ),
-
-    formButtonReset:
-      "text-primary hover:text-primary/80 text-sm",
-
-    // ========================================
-    // FOOTER / LINKS
-    // ========================================
+    formButtonReset: "text-primary hover:text-primary/80 text-sm",
 
     footer: "bg-transparent",
-
     footerAction: "bg-transparent",
-
-    footerActionText:
-      "text-muted-foreground text-xs",
-
-    footerActionLink:
-      "text-primary hover:text-primary/80 font-medium",
-
-    // ========================================
-    // IDENTITY PREVIEW
-    // ========================================
+    footerActionText: "text-muted-foreground text-xs",
+    footerActionLink: "text-primary hover:text-primary/80 font-medium",
 
     identityPreview:
       "bg-accent border border-border rounded-2xl text-foreground",
-
-    identityPreviewText:
-      "text-foreground text-sm",
-
-    identityPreviewEditButton:
-      "text-primary hover:text-primary/80",
-
-    identityPreviewEditButtonIcon:
-      "text-primary",
-
-    // ========================================
-    // OTP
-    // ========================================
+    identityPreviewText: "text-foreground text-sm",
+    identityPreviewEditButton: "text-primary hover:text-primary/80",
+    identityPreviewEditButtonIcon: "text-primary",
 
     otpCodeFieldInput:
       "bg-background text-foreground border border-border rounded-xl text-lg font-serif",
-
-    formResendCodeLink:
-      "text-primary hover:text-primary/80",
-
-    // ========================================
-    // ALTERNATIVE METHODS
-    // ========================================
+    formResendCodeLink: "text-primary hover:text-primary/80",
 
     alternativeMethodsBlockButton: cn(
       "border border-border bg-card text-foreground",
@@ -405,34 +390,17 @@ const clerkAppearance = {
       "hover:bg-accent hover:border-primary/40",
       "transition-all duration-200",
     ),
-
     alternativeMethodsBlockButtonText:
       "text-foreground text-sm font-medium",
 
-    // ========================================
-    // INTERNAL
-    // ========================================
-
     navbar: "bg-transparent",
-
     navbarButton: "text-foreground",
-
     navbarButtonIcon: "text-foreground",
-
     pageScrollBox: "bg-card",
-
     page: "bg-card",
 
-    // ========================================
-    // ALERTS / BADGES
-    // ========================================
-
-    alert:
-      "bg-accent border border-border rounded-2xl",
-
-    alertText:
-      "text-foreground text-sm",
-
+    alert: "bg-accent border border-border rounded-2xl",
+    alertText: "text-foreground text-sm",
     badge:
       "bg-primary/10 text-primary text-xs font-medium rounded-full px-2 py-0.5",
   },
@@ -440,20 +408,6 @@ const clerkAppearance = {
 
 // ============================================
 // ROOT LAYOUT
-// ============================================
-//
-// IMPORTANT:
-//
-// RootLayout is GLOBAL ONLY.
-//
-// Do NOT put:
-//   - Container
-//   - Navbar
-//   - Admin layout
-//
-// here.
-//
-// Public and admin routes have their own layouts.
 // ============================================
 
 export default function RootLayout({
@@ -478,35 +432,44 @@ export default function RootLayout({
           rel="preconnect"
           href="https://fonts.googleapis.com"
         />
-
         <link
           rel="preconnect"
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
-
         <link
           rel="dns-prefetch"
           href="https://fonts.gstatic.com"
         />
+
+        {/* JSON-LD — Organization + WebSite schema for rich results */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteJsonLd),
+          }}
+        />
       </head>
 
-      <body className="min-h-full flex flex-col font-sans scrollbar-none  overflow-x-hidden ">
+      <body className="min-h-full flex flex-col font-sans scrollbar-none overflow-x-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >
-          <ClerkProvider
-            appearance={clerkAppearance}
-          
-          >
+          <ClerkProvider appearance={clerkAppearance}>
             <main className="flex flex-1 flex-col">
               {children}
             </main>
 
-            <ExitIntentPopup/>
+            <ExitIntentPopup />
             <Toaster />
           </ClerkProvider>
         </ThemeProvider>

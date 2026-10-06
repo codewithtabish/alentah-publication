@@ -10,7 +10,134 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
+
+// ============================================================
+// SEO METADATA
+// ============================================================
+
+const SITE_URL = "https://www.alentah.com";
+
+export const metadata: Metadata = {
+  title: "About Alentah — Our Mission & Editorial Principles",
+  description:
+    "Alentah is an independent editorial publication covering technology, business, finance, lifestyle, culture, travel, health, science, and design. Learn about our mission, our editors, and the standards we hold every story to.",
+  keywords: [
+    "About Alentah",
+    "Alentah mission",
+    "Alentah editors",
+    "Talha Tabish",
+    "Sudais Azlan",
+    "independent publication",
+    "slow journalism",
+    "editorial standards",
+    "editorial principles",
+    "digital magazine",
+    "long-form journalism",
+  ],
+  alternates: {
+    canonical: "/about",
+  },
+  openGraph: {
+    type: "website",
+    url: "/about",
+    siteName: "Alentah",
+    title: "About Alentah — Our Mission & Editorial Principles",
+    description:
+      "An independent editorial publication. Learn about our mission, our editors, and the standards we hold every story to.",
+    images: [
+      {
+        url: "/seo/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "About Alentah",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About Alentah — Our Mission & Editorial Principles",
+    description:
+      "An independent editorial publication. Learn about our mission, our editors, and the standards we hold every story to.",
+    images: ["/seo/og-image.png"],
+  },
+};
+
+// ============================================================
+// STRUCTURED DATA (JSON-LD)
+// ============================================================
+
+const aboutPageJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  name: "About Alentah",
+  url: `${SITE_URL}/about`,
+  description:
+    "Alentah is an independent editorial publication covering technology, business, finance, lifestyle, culture, travel, health, science, and design.",
+  inLanguage: "en",
+  mainEntity: {
+    "@type": "Organization",
+    name: "Alentah",
+    url: SITE_URL,
+    logo: `${SITE_URL}/seo/icon-512.png`,
+    foundingDate: "2014",
+    founder: {
+      "@type": "Person",
+      name: "Talha Tabish",
+      jobTitle: "Editor-in-Chief",
+      url: SITE_URL,
+    },
+    knowsAbout: [
+      "Technology",
+      "Business",
+      "Finance",
+      "Lifestyle",
+      "Culture",
+      "Travel",
+      "Health",
+      "Science",
+      "Design",
+      "Slow Journalism",
+      "Editorial Writing",
+    ],
+    employee: [
+      {
+        "@type": "Person",
+        name: "Talha Tabish",
+        jobTitle: "Editor-in-Chief",
+        description:
+          "Senior Software Engineer. Fifteen years building systems and writing about the ideas that shape them.",
+      },
+      {
+        "@type": "Person",
+        name: "Sudais Azlan",
+        jobTitle: "Co-Founder & Editor",
+        description:
+          "Senior AI Engineer. Focused on the intersection of language, intelligence, and the craft of publishing.",
+      },
+    ],
+  },
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: SITE_URL,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "About",
+      item: `${SITE_URL}/about`,
+    },
+  ],
+};
 
 // ============================================================
 // DATA
@@ -353,6 +480,20 @@ function Signature({
 export default function AboutPage() {
   return (
     <main className="w-full">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(aboutPageJsonLd),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd),
+        }}
+      />
+
       {/* =====================================================
           BACK BUTTON
           ===================================================== */}
