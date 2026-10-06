@@ -6,6 +6,11 @@
 // and a bit smaller, page carries more editorial substance.
 // Includes a back button at the top.
 // No horizontal padding — the global Container handles it.
+//
+// Performance:
+//   - Editor photos use priority + fetchPriority="high"
+//     (they are the LCP elements on this page).
+//   - Images use quality={85} for smaller file sizes.
 // ============================================================
 
 import Image from "next/image";
@@ -19,10 +24,12 @@ import { ArrowLeft } from "lucide-react";
 
 const SITE_URL = "https://www.alentah.com";
 
+const SHORT_DESCRIPTION =
+  "Alentah's mission, editors, and the standards we hold every story to. An independent publication for readers who value depth over speed.";
+
 export const metadata: Metadata = {
   title: "About Alentah — Our Mission & Editorial Principles",
-  description:
-    "Alentah is an independent editorial publication covering technology, business, finance, lifestyle, culture, travel, health, science, and design. Learn about our mission, our editors, and the standards we hold every story to.",
+  description: SHORT_DESCRIPTION,
   keywords: [
     "About Alentah",
     "Alentah mission",
@@ -44,8 +51,7 @@ export const metadata: Metadata = {
     url: "/about",
     siteName: "Alentah",
     title: "About Alentah — Our Mission & Editorial Principles",
-    description:
-      "An independent editorial publication. Learn about our mission, our editors, and the standards we hold every story to.",
+    description: SHORT_DESCRIPTION,
     images: [
       {
         url: "/seo/og-image.png",
@@ -58,8 +64,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "About Alentah — Our Mission & Editorial Principles",
-    description:
-      "An independent editorial publication. Learn about our mission, our editors, and the standards we hold every story to.",
+    description: SHORT_DESCRIPTION,
     images: ["/seo/og-image.png"],
   },
 };
@@ -615,7 +620,7 @@ export default function AboutPage() {
         </h2>
 
         <div className="mt-10 grid grid-cols-1 gap-12 sm:mt-12 lg:grid-cols-2 lg:gap-16">
-          {EDITORS.map((editor) => (
+          {EDITORS.map((editor, index) => (
             <article key={editor.name} className="flex flex-col">
               <figure className="flex flex-col">
                 <div className="relative mx-auto w-full max-w-xs overflow-hidden rounded-2xl bg-muted sm:max-w-[360px] sm:rounded-3xl">
@@ -624,7 +629,9 @@ export default function AboutPage() {
                       src={editor.image}
                       alt={editor.imageAlt}
                       fill
-                      priority
+                      priority={index === 0}
+                      fetchPriority={index === 0 ? "high" : "auto"}
+                      quality={85}
                       sizes="(max-width: 640px) 320px, 360px"
                       className="object-cover object-top scale-[1.01]"
                     />
@@ -810,18 +817,10 @@ export default function AboutPage() {
               every message.
             </p>
             <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3 text-[14px]">
-              <a
-                href="mailto:hello@alentah.com"
-                className="text-foreground underline decoration-border underline-offset-4 transition-colors hover:text-primary hover:decoration-primary/60"
-              >
+              {/* Plain text — user can select and copy manually */}
+              <span className="select-all font-mono text-foreground">
                 hello@alentah.com
-              </a>
-              <a
-                href="mailto:pitch@alentah.com"
-                className="text-foreground underline decoration-border underline-offset-4 transition-colors hover:text-primary hover:decoration-primary/60"
-              >
-                pitch@alentah.com
-              </a>
+              </span>
             </div>
           </div>
 
@@ -830,7 +829,6 @@ export default function AboutPage() {
               href="/articles"
               className="group inline-flex h-11 items-center gap-2 rounded-full border border-border bg-background px-5 text-[11px] font-bold uppercase tracking-[0.15em] text-foreground transition-colors hover:bg-muted"
             >
-              <span>Read the latest</span>
               <span
                 aria-hidden="true"
                 className="transition-transform duration-200 group-hover:translate-x-0.5"

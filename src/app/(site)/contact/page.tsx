@@ -3,13 +3,15 @@
 // Contact — ALENTAH
 // Server component. Owns SEO metadata + JSON-LD structured data.
 // The back button is the shared BackButton client component.
+// The contact form is a client component in
+//   @/components/site/pages/contact/contact-form
 // ============================================================
 
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
 import { BackButton } from "@/components/site/general/backs/back-button";
-
+import { ContactForm } from "@/components/site/pages/contact/contact-form";
 
 // ============================================================
 // SEO METADATA
@@ -17,10 +19,12 @@ import { BackButton } from "@/components/site/general/backs/back-button";
 
 const SITE_URL = "https://www.alentah.com";
 
+const SHORT_DESCRIPTION =
+  "Pitches, corrections, partnerships, and press enquiries. We read every message and reply within 5–7 days.";
+
 export const metadata: Metadata = {
   title: "Contact Alentah — Editorial, Corrections & Partnerships",
-  description:
-    "Write to us. Pitches, corrections, partnerships, and press enquiries — we read every message and reply within 5–7 days. Reach the editorial team at hello@alentah.com.",
+  description: SHORT_DESCRIPTION,
   keywords: [
     "contact Alentah",
     "Alentah email",
@@ -42,8 +46,7 @@ export const metadata: Metadata = {
     url: "/contact",
     siteName: "Alentah",
     title: "Contact Alentah — Editorial, Corrections & Partnerships",
-    description:
-      "Pitches, corrections, partnerships, and press enquiries. We read every message and reply within 5–7 days.",
+    description: SHORT_DESCRIPTION,
     images: [
       {
         url: "/seo/og-image.png",
@@ -56,8 +59,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Contact Alentah — Editorial, Corrections & Partnerships",
-    description:
-      "Pitches, corrections, partnerships, and press enquiries. We read every message and reply within 5–7 days.",
+    description: SHORT_DESCRIPTION,
     images: ["/seo/og-image.png"],
   },
   robots: {
@@ -107,19 +109,19 @@ const contactPageJsonLd = {
         "@type": "ContactPoint",
         contactType: "Editorial",
         email: "hello@alentah.com",
-        availableLanguage: ["English", "Urdu"],
+        availableLanguage: ["English", "Urdu", "Pashto"],
       },
       {
         "@type": "ContactPoint",
         contactType: "Corrections",
         email: "corrections@alentah.com",
-        availableLanguage: ["English", "Urdu"],
+        availableLanguage: ["English", "Urdu", "Pashto"],
       },
       {
         "@type": "ContactPoint",
         contactType: "Partnerships",
         email: "partners@alentah.com",
-        availableLanguage: ["English", "Urdu"],
+        availableLanguage: ["English", "Urdu", "Pashto"],
       },
     ],
   },
@@ -240,12 +242,9 @@ export default function ContactPage() {
                   </p>
 
                   <div>
-                    <a
-                      href={`mailto:${line.email}`}
-                      className="inline-block font-serif text-xl text-foreground underline decoration-border underline-offset-[6px] transition-colors hover:text-primary hover:decoration-primary/60 sm:text-2xl"
-                    >
+                    <p className="select-all font-mono text-xl text-foreground sm:text-2xl">
                       {line.email}
-                    </a>
+                    </p>
 
                     <p className="mt-2 text-[13px] leading-6 text-muted-foreground">
                       {line.subline}
@@ -284,115 +283,9 @@ export default function ContactPage() {
             </p>
           </div>
 
-          {/* Right — form */}
+          {/* Right — form (client component) */}
           <div className="lg:col-span-7">
-            <form
-              action="/api/contact"
-              method="post"
-              className="flex flex-col gap-6"
-            >
-              <Field
-                id="contact-name"
-                label="Your name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                required
-              />
-
-              <Field
-                id="contact-email"
-                label="Email address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-              />
-
-              {/* Subject — select */}
-              <div>
-                <label
-                  htmlFor="contact-subject"
-                  className="block text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground"
-                >
-                  Subject
-                </label>
-                <div className="relative mt-2">
-                  <select
-                    id="contact-subject"
-                    name="subject"
-                    required
-                    className="h-11 w-full appearance-none rounded-md border border-border bg-muted/30 px-3 pr-10 text-[14px] text-foreground transition-colors focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option value="">Select a subject</option>
-                    <option value="editorial">Editorial pitch</option>
-                    <option value="correction">Correction</option>
-                    <option value="partnership">Partnership</option>
-                    <option value="feedback">Feedback</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      className="size-4"
-                    >
-                      <path
-                        d="m6 9 6 6 6-6"
-                        stroke="currentColor"
-                        strokeWidth="1.75"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                </div>
-              </div>
-
-              {/* Message — textarea */}
-              <div>
-                <label
-                  htmlFor="contact-message"
-                  className="block text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground"
-                >
-                  Message
-                </label>
-                <textarea
-                  id="contact-message"
-                  name="message"
-                  required
-                  rows={5}
-                  className="mt-2 w-full resize-y rounded-md border border-border bg-muted/30 px-3 py-3 text-[14px] leading-6 text-foreground transition-colors focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-
-              {/* Checkbox */}
-              <label className="flex items-start gap-3 text-[13px] leading-6 text-muted-foreground">
-                <input
-                  type="checkbox"
-                  name="copy"
-                  className="mt-1 size-4 shrink-0 cursor-pointer rounded border border-border bg-background accent-primary"
-                />
-                <span>Send me a copy of this message.</span>
-              </label>
-
-              {/* Submit */}
-              <div>
-                <button
-                  type="submit"
-                  className="group inline-flex h-11 items-center gap-2 rounded-full bg-primary px-6 text-[11px] font-bold uppercase tracking-[0.15em] text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  <span>Send message</span>
-                  <ArrowRight
-                    className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
-                    aria-hidden="true"
-                  />
-                </button>
-              </div>
-            </form>
+            <ContactForm />
           </div>
         </div>
       </section>
@@ -465,14 +358,14 @@ export default function ContactPage() {
                   <dd className="text-foreground/80">— Remote-first</dd>
                 </div>
                 <div className="flex flex-wrap gap-x-3">
-                  <dt className="shrink-0">Based between</dt>
-                  <dd className="text-foreground/80">
-                    Karachi and Berlin
-                  </dd>
+                  <dt className="shrink-0">Based in</dt>
+                  <dd className="text-foreground/80">Mardan, KPK, Pakistan</dd>
                 </div>
                 <div className="flex flex-wrap gap-x-3">
                   <dt className="shrink-0">Responses in</dt>
-                  <dd className="text-foreground/80">English or Urdu</dd>
+                  <dd className="text-foreground/80">
+                    English, Urdu or Pashto
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -557,44 +450,5 @@ export default function ContactPage() {
         </div>
       </section>
     </main>
-  );
-}
-
-// ============================================================
-// FIELD — small text input helper
-// ============================================================
-
-function Field({
-  id,
-  label,
-  name,
-  type = "text",
-  autoComplete,
-  required,
-}: {
-  id: string;
-  label: string;
-  name: string;
-  type?: "text" | "email";
-  autoComplete?: string;
-  required?: boolean;
-}) {
-  return (
-    <div>
-      <label
-        htmlFor={id}
-        className="block text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground"
-      >
-        {label}
-      </label>
-      <input
-        id={id}
-        name={name}
-        type={type}
-        autoComplete={autoComplete}
-        required={required}
-        className="mt-2 h-11 w-full rounded-md border border-border bg-muted/30 px-3 text-[14px] text-foreground transition-colors placeholder:text-muted-foreground/60 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
-      />
-    </div>
   );
 }

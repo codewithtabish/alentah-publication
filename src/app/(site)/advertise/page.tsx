@@ -10,17 +10,18 @@ import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
 import { BackButton } from "@/components/site/general/backs/back-button";
 
-
 // ============================================================
 // SEO METADATA
 // ============================================================
 
 const SITE_URL = "https://www.alentah.com";
 
+const SHORT_DESCRIPTION =
+  "Reach readers who actually read. Editorial partnerships, display placements, and newsletter sponsorships for aligned brands.";
+
 export const metadata: Metadata = {
   title: "Advertise with Alentah — Reach Curious Minds",
-  description:
-    "Reach 180,000 monthly readers who actually read. Long-form editorial partnerships, considered display placements, newsletter sponsorships, and custom research for brands aligned with our editorial standards.",
+  description: SHORT_DESCRIPTION,
   keywords: [
     "advertise on Alentah",
     "Alentah advertising",
@@ -42,8 +43,7 @@ export const metadata: Metadata = {
     url: "/advertise",
     siteName: "Alentah",
     title: "Advertise with Alentah — Reach Curious Minds",
-    description:
-      "Long-form editorial partnerships, considered display placements, and newsletter sponsorships for brands aligned with our editorial standards.",
+    description: SHORT_DESCRIPTION,
     images: [
       {
         url: "/seo/og-image.png",
@@ -56,8 +56,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Advertise with Alentah — Reach Curious Minds",
-    description:
-      "Long-form editorial partnerships, considered display placements, and newsletter sponsorships for brands aligned with our editorial standards.",
+    description: SHORT_DESCRIPTION,
     images: ["/seo/og-image.png"],
   },
   robots: {
@@ -137,7 +136,8 @@ const serviceJsonLd = {
     name: "Alentah",
     url: SITE_URL,
   },
-  serviceType: "Editorial Partnership, Display Advertising, Newsletter Sponsorship, Custom Research",
+  serviceType:
+    "Editorial Partnership, Display Advertising, Newsletter Sponsorship, Custom Research",
   areaServed: "Worldwide",
   audience: {
     "@type": "Audience",

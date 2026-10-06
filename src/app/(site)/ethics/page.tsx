@@ -11,17 +11,18 @@ import { BackButton } from "@/components/site/general/backs/back-button";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-
 // ============================================================
 // SEO METADATA
 // ============================================================
 
 const SITE_URL = "https://www.alentah.com";
 
+const SHORT_DESCRIPTION =
+  "Independence, funding, sources, corrections, AI, and accountability — the editorial principles behind every story we publish.";
+
 export const metadata: Metadata = {
   title: "Editorial Ethics — Alentah's Principles & Standards",
-  description:
-    "How Alentah works, and what we stand for. Independence, funding, sources, corrections, use of AI, sponsored content, reader data, and accountability — the principles behind every story we publish.",
+  description: SHORT_DESCRIPTION,
   keywords: [
     "editorial ethics",
     "Alentah ethics",
@@ -43,8 +44,7 @@ export const metadata: Metadata = {
     url: "/ethics",
     siteName: "Alentah",
     title: "Editorial Ethics — Alentah's Principles & Standards",
-    description:
-      "Independence, funding, sources, corrections, AI, sponsored content, reader data, and accountability — the principles behind every story we publish.",
+    description: SHORT_DESCRIPTION,
     images: [
       {
         url: "/seo/og-image.png",
@@ -57,8 +57,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Editorial Ethics — Alentah's Principles & Standards",
-    description:
-      "Independence, funding, sources, corrections, AI, sponsored content, reader data, and accountability — the principles behind every story we publish.",
+    description: SHORT_DESCRIPTION,
     images: ["/seo/og-image.png"],
   },
   robots: {

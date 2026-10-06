@@ -11,6 +11,9 @@
 //
 // No horizontal padding on page-level elements — the global
 // Container handles it. No bg-background on any panel.
+//
+// ⚠️ This is a CLIENT component. It cannot export `metadata`.
+//    All SEO for /terms lives in the sibling `layout.tsx`.
 // ============================================================
 
 "use client";
@@ -24,19 +27,19 @@ import { ArrowLeft } from "lucide-react";
 // ============================================================
 
 const SECTIONS = [
-  { id: "acceptance-of-terms", label: "Acceptance of terms", eyebrow: "Acceptance of terms" },
-  { id: "using-alentah", label: "Using Alentah", eyebrow: "Using Alentah" },
-  { id: "your-account", label: "Your account", eyebrow: "Your account" },
-  { id: "content-you-post", label: "Content you post", eyebrow: "Content you post" },
-  { id: "our-content", label: "Our content", eyebrow: "Our content" },
-  { id: "newsletter-and-email", label: "Newsletter and email", eyebrow: "Newsletter and email" },
-  { id: "third-party-links", label: "Third-party links", eyebrow: "Third-party links" },
-  { id: "disclaimer", label: "Disclaimer", eyebrow: "Disclaimer" },
-  { id: "limitation-of-liability", label: "Limitation of liability", eyebrow: "Limitation of liability" },
-  { id: "changes-to-these-terms", label: "Changes to these terms", eyebrow: "Changes to these terms" },
-  { id: "governing-law", label: "Governing law", eyebrow: "Governing law" },
-  { id: "delete-your-account", label: "Delete your account", eyebrow: "Delete your account" },
-  { id: "contact-us", label: "Contact us", eyebrow: "Contact us" },
+  { id: "acceptance-of-terms", label: "Acceptance of terms" },
+  { id: "using-alentah", label: "Using Alentah" },
+  { id: "your-account", label: "Your account" },
+  { id: "content-you-post", label: "Content you post" },
+  { id: "our-content", label: "Our content" },
+  { id: "newsletter-and-email", label: "Newsletter and email" },
+  { id: "third-party-links", label: "Third-party links" },
+  { id: "disclaimer", label: "Disclaimer" },
+  { id: "limitation-of-liability", label: "Limitation of liability" },
+  { id: "changes-to-these-terms", label: "Changes to these terms" },
+  { id: "governing-law", label: "Governing law" },
+  { id: "delete-your-account", label: "Delete your account" },
+  { id: "contact-us", label: "Contact us" },
 ];
 
 // ============================================================
@@ -140,9 +143,7 @@ export default function TermsPage() {
       <section
         aria-labelledby="terms-heading"
         className={
-          hasHistory
-            ? "pt-10 sm:pt-12 lg:pt-14"
-            : "pt-16 sm:pt-20 lg:pt-24"
+          hasHistory ? "pt-10 sm:pt-12 lg:pt-14" : "pt-16 sm:pt-20 lg:pt-24"
         }
       >
         <div aria-hidden="true" className="h-px w-full bg-border" />
@@ -251,7 +252,6 @@ export default function TermsPage() {
             eyebrow="Your account"
             heading="Your account"
           >
-         
             <p className="text-[16px] leading-7 text-muted-foreground">
               We are responsible for keeping your data secure on our side. We
               store your information with the same care we apply to our own

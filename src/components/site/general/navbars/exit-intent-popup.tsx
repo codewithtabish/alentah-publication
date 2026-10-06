@@ -10,9 +10,12 @@
 // Behavior:
 //   - Arms 8 seconds after mount (won't fire on page load)
 //   - Fires ONCE per browser session (sessionStorage flag)
+//   - NEVER fires again once this browser has subscribed
+//     (localStorage — persists across reloads and tabs)
 //   - Dismissed via × button, ESC key, or backdrop click
 //   - Body scroll locked while open
 //   - Form submit is independent — closing mid-flight doesn't cancel it
+//   - On success: shows a checkmark for 1.4s, then auto-closes
 //
 // Layout:
 //   - Compact card, auto height, max-w-[600px]
@@ -22,6 +25,9 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { subscribeToNewsletter } from "@/actions/newsletter/subscribe-to-newsletter";
+import { hasAnySubscription, rememberSubscribed } from "@/lib/resend/subscriber-memory";
+
 
 // ------------------------------------------------------------
 // CONSTANTS
@@ -34,6 +40,12 @@ const ARM_DELAY_MS = 8000;
 
 // Cursor must cross this many pixels above the viewport top.
 const EXIT_THRESHOLD = 4;
+
+// How long the success state stays visible before auto-closing.
+const SUCCESS_AUTO_CLOSE_MS = 1400;
+
+// How long the exit animation runs (keep in sync with CSS below).
+const EXIT_ANIM_MS = 200;
 
 // ------------------------------------------------------------
 // COMPONENT
@@ -53,6 +65,10 @@ export function ExitIntentPopup() {
   React.useEffect(() => {
     if (!mounted) return;
 
+    // ── Never fire if this browser already subscribed ──
+    if (hasAnySubscription()) return;
+
+    // ── Once per session, regardless ──
     try {
       if (sessionStorage.getItem(STORAGE_KEY) === "1") return;
     } catch {
@@ -65,6 +81,14 @@ export function ExitIntentPopup() {
 
     const trigger = () => {
       if (fired) return;
+
+      // Double-check right before opening — in case they
+      // subscribed via the sidebar box in this same session.
+      if (hasAnySubscription()) {
+        fired = true;
+        return;
+      }
+
       fired = true;
       armed = false;
       setOpen(true);
@@ -152,41 +176,111 @@ export function ExitIntentPopup() {
 // DIALOG
 // ------------------------------------------------------------
 
+type Status = "idle" | "loading" | "success" | "error";
+
 function ExitIntentDialog({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = React.useState("");
-  const [status, setStatus] = React.useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
+  const [status, setStatus] = React.useState<Status>("idle");
   const [errorMessage, setErrorMessage] = React.useState("");
+  const [successMessage, setSuccessMessage] = React.useState("");
+  const [shake, setShake] = React.useState(false);
 
+  // ── Exit animation state ──
+  const [closing, setClosing] = React.useState(false);
+  const closeTimerRef = React.useRef<number | null>(null);
+  const successTimerRef = React.useRef<number | null>(null);
+
+  const isLoading = status === "loading";
+  const isSuccess = status === "success";
+  const isError = status === "error";
+
+  // ---------------------------------------------------------
+  // Graceful close — runs the exit animation, then calls
+  // the parent's onClose after the animation finishes.
+  // ---------------------------------------------------------
+  const beginClose = React.useCallback(() => {
+    if (closing) return;
+    setClosing(true);
+
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+    }
+
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = null;
+      onClose();
+    }, EXIT_ANIM_MS);
+  }, [closing, onClose]);
+
+  // ---------------------------------------------------------
+  // Cancel both timers on unmount (safety net)
+  // ---------------------------------------------------------
+  React.useEffect(() => {
+    return () => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+      if (successTimerRef.current !== null) {
+        window.clearTimeout(successTimerRef.current);
+      }
+    };
+  }, []);
+
+  // ---------------------------------------------------------
+  // Submit
+  // ---------------------------------------------------------
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!email.trim()) return;
+    if (!email.trim() || isLoading || isSuccess) return;
 
     setStatus("loading");
     setErrorMessage("");
+    setSuccessMessage("");
 
-    try {
-      const res = await fetch("/api/newsletter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, source: "exit-intent" }),
-      });
+    const submittedEmail = email;
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Subscription failed.");
-      }
+    const formData = new FormData();
+    formData.set("email", submittedEmail);
+    formData.set("source", "exit-intent");
+
+    const result = await subscribeToNewsletter(formData);
+
+    if (result.success) {
+      // ── Remember this browser has subscribed ──
+      // Both popup and sidebar box read from this.
+      rememberSubscribed(submittedEmail);
 
       setStatus("success");
+      setSuccessMessage(result.message);
       setEmail("");
-    } catch (err) {
+
+      // Auto-close after a short pause so the reader
+      // sees the confirmation, then the popup fades out.
+      if (successTimerRef.current !== null) {
+        window.clearTimeout(successTimerRef.current);
+      }
+      successTimerRef.current = window.setTimeout(() => {
+        successTimerRef.current = null;
+        beginClose();
+      }, SUCCESS_AUTO_CLOSE_MS);
+    } else {
       setStatus("error");
-      setErrorMessage(
-        err instanceof Error ? err.message : "Something went wrong.",
-      );
+      setErrorMessage(result.error);
+      setShake(true);
+      window.setTimeout(() => setShake(false), 420);
     }
+  };
+
+  // ---------------------------------------------------------
+  // Close button handler — also plays the exit animation
+  // ---------------------------------------------------------
+  const handleClose = () => {
+    if (successTimerRef.current !== null) {
+      window.clearTimeout(successTimerRef.current);
+      successTimerRef.current = null;
+    }
+    beginClose();
   };
 
   return (
@@ -194,41 +288,44 @@ function ExitIntentDialog({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="exit-intent-heading"
+      data-closing={closing ? "true" : "false"}
       className={cn(
         "fixed inset-0 z-100 flex items-center justify-center",
         "bg-black/45 px-4 py-6 backdrop-blur-sm",
-        "animate-in fade-in-0 duration-200",
+        "transition-opacity duration-200",
+        closing ? "opacity-0" : "opacity-100 animate-in fade-in-0",
       )}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !closing) handleClose();
       }}
     >
       <div
         className={cn(
-          // Compact card — auto height
           "relative w-full max-w-[600px]",
-          // Soft rounded corners
           "rounded-3xl sm:rounded-[2rem]",
-          // Theme colors — no hardcoded hex
           "bg-card text-card-foreground",
           "border border-border",
           "shadow-[0_30px_80px_-30px_rgba(0,0,0,0.35)]",
-          "animate-in fade-in-0 zoom-in-95 duration-200",
-          // Padding
           "px-7 py-9 sm:px-10 sm:py-12",
+          "transition-all duration-200",
+          closing
+            ? "scale-[0.97] opacity-0"
+            : "scale-100 opacity-100 animate-in fade-in-0 zoom-in-95",
         )}
       >
         {/* CLOSE BUTTON */}
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           aria-label="Close"
+          disabled={closing}
           className={cn(
             "absolute right-4 top-4 inline-flex size-9 items-center justify-center",
             "rounded-full border border-border bg-background/80",
             "text-muted-foreground transition-colors",
             "hover:border-primary/60 hover:text-primary",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+            "disabled:pointer-events-none disabled:opacity-0",
           )}
         >
           <svg
@@ -294,9 +391,12 @@ function ExitIntentDialog({ onClose }: { onClose: () => void }) {
           <div
             className={cn(
               "flex w-full items-center gap-2",
-              "rounded-full border border-border bg-background/70",
-              "px-2 py-1.5 pl-5",
-              "transition-colors focus-within:border-primary/60",
+              "rounded-full border bg-background/70",
+              "p-1.5 pl-5",
+              "transition-all duration-200",
+              "focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10",
+              isError ? "border-destructive/50" : "border-border",
+              shake && "animate-[shake_0.4s_ease-in-out]",
             )}
           >
             <label htmlFor="exit-intent-email" className="sr-only">
@@ -311,61 +411,155 @@ function ExitIntentDialog({ onClose }: { onClose: () => void }) {
                 setEmail(e.target.value);
                 if (status === "error") setStatus("idle");
               }}
-              disabled={status === "loading" || status === "success"}
+              disabled={isLoading || isSuccess}
               required
               autoComplete="email"
-              placeholder="your@email.com"
+              placeholder={
+                isLoading
+                  ? "Adding you to the list…"
+                  : isSuccess
+                    ? "You're on the list."
+                    : "your@email.com"
+              }
               className={cn(
                 "h-10 min-w-0 flex-1 bg-transparent",
                 "text-[14px] text-foreground",
                 "placeholder:text-muted-foreground/60",
                 "focus:outline-none",
+                "transition-colors duration-200",
+                isLoading && "opacity-60",
               )}
             />
 
             <button
               type="submit"
-              disabled={status === "loading" || status === "success"}
+              disabled={isLoading || isSuccess}
+              aria-busy={isLoading}
               className={cn(
-                "inline-flex h-10 shrink-0 items-center justify-center",
-                "rounded-full bg-primary px-5 sm:px-6",
-                "text-[11px] font-bold uppercase tracking-[0.18em] text-primary-foreground",
-                "transition-colors hover:bg-primary/90",
-                "disabled:cursor-not-allowed disabled:opacity-70",
+                "relative inline-flex h-10 shrink-0 items-center justify-center",
+                "rounded-full",
+                "min-w-[112px] px-5 sm:px-6",
+                "text-[11px] font-bold uppercase tracking-[0.18em]",
+                "bg-primary text-primary-foreground",
+                "transition-all duration-200",
+                !isLoading &&
+                  !isSuccess &&
+                  "hover:bg-primary/90 hover:shadow-[0_6px_20px_-6px_var(--primary)] active:scale-[0.98]",
+                "disabled:cursor-not-allowed",
+                (isLoading || isSuccess) && "disabled:opacity-100",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-card",
               )}
             >
-              {status === "loading" && "…"}
-              {status === "success" && "Done"}
-              {(status === "idle" || status === "error") && "Subscribe"}
+              {status === "idle" && <span>Subscribe</span>}
+
+              {isLoading && (
+                <span
+                  className="flex items-center gap-1"
+                  aria-label="Subscribing"
+                >
+                  <span className="size-1.5 animate-[pulse_1.2s_ease-in-out_infinite] rounded-full bg-primary-foreground" />
+                  <span className="size-1.5 animate-[pulse_1.2s_ease-in-out_0.15s_infinite] rounded-full bg-primary-foreground" />
+                  <span className="size-1.5 animate-[pulse_1.2s_ease-in-out_0.3s_infinite] rounded-full bg-primary-foreground" />
+                </span>
+              )}
+
+              {isSuccess && (
+                <span className="flex items-center gap-1.5">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="size-3.5 animate-[pop_0.35s_ease-out]"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M4 12l5 5L20 6"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span>Subscribed</span>
+                </span>
+              )}
             </button>
           </div>
 
-          {status === "error" && errorMessage && (
-            <p className="pl-1 text-[12px] text-destructive" role="alert">
-              {errorMessage}
-            </p>
-          )}
+          <div
+            className="min-h-[18px] pl-1"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {isError && errorMessage && (
+              <p
+                className="animate-in fade-in-0 slide-in-from-top-1 text-[12px] text-destructive"
+                role="alert"
+              >
+                {errorMessage}
+              </p>
+            )}
 
-          {status === "success" && (
-            <p className="pl-1 text-[12px] text-primary">
-              You&rsquo;re in. Check your inbox on Sunday.
-            </p>
-          )}
+            {isSuccess && successMessage && (
+              <p className="animate-in fade-in-0 slide-in-from-top-1 text-[12px] text-primary">
+                {successMessage}
+              </p>
+            )}
 
-          {status === "idle" && (
-            <p className="pl-1 text-[11px] text-muted-foreground">
-              No spam. Unsubscribe any time.
-            </p>
-          )}
+            {status === "idle" && (
+              <p className="text-[11px] text-muted-foreground">
+                No spam. Unsubscribe any time.
+              </p>
+            )}
+          </div>
         </form>
 
-        {/* SIGNATURE */}
         <div className="mt-7 border-t border-border pt-5">
           <p className="text-center font-serif text-[13px] italic text-muted-foreground">
             — The Editorial Team.
           </p>
         </div>
       </div>
+
+      <style jsx global>{`
+        @keyframes shake {
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+          20% {
+            transform: translateX(-6px);
+          }
+          40% {
+            transform: translateX(6px);
+          }
+          60% {
+            transform: translateX(-4px);
+          }
+          80% {
+            transform: translateX(4px);
+          }
+        }
+        @keyframes pop {
+          0% {
+            transform: scale(0.5);
+            opacity: 0;
+          }
+          60% {
+            transform: scale(1.15);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          * {
+            animation-duration: 0.001ms !important;
+            transition-duration: 0.001ms !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

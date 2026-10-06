@@ -19,12 +19,22 @@
 //
 // Text width: titles + descriptions are capped with max-w-[Nch]
 // so they don't stretch across the full row on wide screens.
+//
+// Performance:
+//   - Hero + LatestStories featured images use fetchPriority="high"
+//     and quality={85} to win LCP.
+//   - All other images stay lazy (Next.js default).
+//
+// NOTE: NewsletterBox is now a client component in
+//       ./newsletter-box.tsx and uses the shared
+//       subscribeToNewsletter server action.
 // ============================================================
 
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { HomeBlogCard } from "@/actions/blog/get-home-blogs";
+import { NewsletterBox } from "./newsletter-box";
 
 // ============================================================
 // TYPES
@@ -157,6 +167,8 @@ function Hero({ article }: { article: HomeBlogCard }) {
           alt={article.title}
           fill
           priority
+          fetchPriority="high"
+          quality={85}
           sizes="(max-width: 768px) 100vw, 40vw"
           className="object-cover scale-[1.01]"
         />
@@ -209,6 +221,7 @@ function ArticleCard({ article }: { article: HomeBlogCard }) {
           src={article.bannerImage}
           alt={article.title}
           fill
+          quality={80}
           sizes="(max-width: 640px) 100vw, 30vw"
           className="object-cover scale-[1.01]"
         />
@@ -288,6 +301,8 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
             alt={featured.title}
             fill
             priority
+            fetchPriority="high"
+            quality={85}
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-cover scale-[1.01]"
           />
@@ -330,6 +345,7 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
                     src={editorImage}
                     alt={editorName}
                     fill
+                    quality={85}
                     sizes="44px"
                     className="object-cover scale-[1.01]"
                   />
@@ -370,6 +386,7 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
                       src={article.bannerImage}
                       alt={article.title}
                       fill
+                      quality={80}
                       sizes="(max-width: 640px) 96px, 160px"
                       className="object-cover scale-[1.01]"
                     />
@@ -443,6 +460,7 @@ function EditorsPicks({ articles }: { articles: HomeBlogCard[] }) {
                       src={article.bannerImage}
                       alt={article.title}
                       fill
+                      quality={80}
                       sizes="(max-width: 640px) 120px, 160px"
                       className="object-cover scale-[1.01]"
                     />
@@ -524,55 +542,6 @@ function Trending({ articles }: { articles: HomeBlogCard[] }) {
           </li>
         ))}
       </ol>
-    </section>
-  );
-}
-
-// ============================================================
-// NEWSLETTER BOX
-// ============================================================
-
-function NewsletterBox() {
-  return (
-    <section className="rounded-lg bg-muted/60 p-6">
-      <h3 className="font-serif text-lg leading-tight tracking-tight text-foreground">
-        Get the best stories, once a week.
-      </h3>
-
-      <p className="mt-2 max-w-[46ch] text-[12px] leading-relaxed text-muted-foreground">
-        Sign up for our newsletter and never miss a thing.
-      </p>
-
-      <form className="mt-4 flex flex-col gap-2 sm:flex-row">
-        <label htmlFor="home-newsletter-email" className="sr-only">
-          Email address
-        </label>
-
-        <input
-          id="home-newsletter-email"
-          type="email"
-          name="email"
-          autoComplete="email"
-          placeholder="Your email address"
-          className={cn(
-            "h-10 min-w-0 flex-1 rounded-md px-3",
-            "border border-border bg-background",
-            "text-[12px] text-foreground placeholder:text-muted-foreground/60",
-            "focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/30",
-          )}
-        />
-        <button
-          type="submit"
-          className={cn(
-            "inline-flex h-10 items-center justify-center rounded-md px-4",
-            "bg-primary text-primary-foreground",
-            "text-[10px] font-semibold uppercase tracking-[0.15em]",
-            "hover:bg-primary/90 transition-colors whitespace-nowrap",
-          )}
-        >
-          Subscribe
-        </button>
-      </form>
     </section>
   );
 }

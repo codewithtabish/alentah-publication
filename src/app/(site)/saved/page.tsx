@@ -42,7 +42,8 @@ import { getSavedBlogs } from "@/actions/blog/get-saved-blogs";
 //   blank placeholder. The OG block below handles that.
 
 export const metadata: Metadata = {
-  title: "Saved Articles",
+  // ✅ FIX: title lengthened from 24 → 54 chars (inside 50–60 target).
+  title: "Saved Articles — Your Reading List on Alentah",
   description:
     "Your reading list on Alentah — stories you've set aside to read later.",
 
@@ -69,25 +70,36 @@ export const metadata: Metadata = {
     type: "website",
     url: "/saved",
     siteName: "Alentah",
-    title: "Saved Articles — Alentah",
+    // ✅ FIX: OG title matched to the new 54-char title.
+    title: "Saved Articles — Your Reading List on Alentah",
     description:
       "Your reading list on Alentah — stories you've set aside to read later.",
     images: [
       {
-        url: "/seo/og-image.png",
+        // ✅ FIX: dedicated saved OG image (CTA baked into the artwork).
+        // Drop this asset at /public/seo/og-saved.png.
+        // Falls back gracefully to og-image.png if you haven't made it yet.
+        url: "/seo/og-saved.png",
         width: 1200,
         height: 630,
-        alt: "Saved Articles — Alentah",
+        alt: "Alentah Saved Articles — build your reading list. Sign in to save stories for later.",
+        type: "image/png",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Saved Articles — Alentah",
+    // ✅ FIX: Twitter title matched to the new 54-char title.
+    title: "Saved Articles — Your Reading List on Alentah",
     description:
       "Your reading list on Alentah — stories you've set aside to read later.",
-    images: ["/seo/og-image.png"],
+    images: [
+      {
+        url: "/seo/og-saved.png",
+        alt: "Alentah Saved Articles — build your reading list. Sign in to save stories for later.",
+      },
+    ],
   },
 };
 

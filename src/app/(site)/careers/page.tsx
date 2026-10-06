@@ -5,11 +5,8 @@
 // The back button is the shared BackButton client component.
 // ============================================================
 
-import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight } from "lucide-react";
 import { BackButton } from "@/components/site/general/backs/back-button";
-
 
 // ============================================================
 // SEO METADATA
@@ -17,10 +14,12 @@ import { BackButton } from "@/components/site/general/backs/back-button";
 
 const SITE_URL = "https://www.alentah.com";
 
+const SHORT_DESCRIPTION =
+  "Join a small, independent editorial team. We hire slowly, write carefully, and ship work we're proud to sign. Remote-first.";
+
 export const metadata: Metadata = {
   title: "Careers at Alentah — Build Slow Journalism With Us",
-  description:
-    "We are a small, independent editorial team. We hire slowly, write carefully, and ship work we are proud to sign. Join Alentah — editorial, engineering, and design roles as the team grows.",
+  description: SHORT_DESCRIPTION,
   keywords: [
     "Alentah careers",
     "work at Alentah",
@@ -42,8 +41,7 @@ export const metadata: Metadata = {
     url: "/careers",
     siteName: "Alentah",
     title: "Careers at Alentah — Build Slow Journalism With Us",
-    description:
-      "A small, independent editorial team. We hire slowly, write carefully, and ship work we are proud to sign.",
+    description: SHORT_DESCRIPTION,
     images: [
       {
         url: "/seo/og-image.png",
@@ -56,8 +54,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Careers at Alentah — Build Slow Journalism With Us",
-    description:
-      "A small, independent editorial team. We hire slowly, write carefully, and ship work we are proud to sign.",
+    description: SHORT_DESCRIPTION,
     images: ["/seo/og-image.png"],
   },
   robots: {
@@ -300,20 +297,8 @@ export default function CareersPage() {
 
             <p className="mt-4 max-w-xl text-[14px] leading-7 text-muted-foreground">
               But we hire as the team grows. When a role opens, it will be
-              listed here first — and we&rsquo;ll announce it in the
-              newsletter.
+              listed here first.
             </p>
-
-            <Link
-              href="/newsletter"
-              className="group mt-8 inline-flex h-11 items-center gap-2 rounded-full bg-primary px-6 text-[11px] font-bold uppercase tracking-[0.15em] text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <span>Notify me by email</span>
-              <ArrowRight
-                className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
-                aria-hidden="true"
-              />
-            </Link>
           </div>
         </div>
       </section>
@@ -346,12 +331,10 @@ export default function CareersPage() {
           </div>
 
           <div className="lg:col-span-6">
-            <a
-              href="mailto:careers@alentah.com"
-              className="inline-block font-serif text-3xl text-foreground underline decoration-border underline-offset-8 transition-colors hover:text-primary hover:decoration-primary/60 sm:text-4xl lg:text-[2.5rem]"
-            >
+            {/* Email — plain copyable text, no underline, no link */}
+            <p className="select-all font-mono text-3xl text-foreground sm:text-4xl lg:text-[2.5rem]">
               careers@alentah.com
-            </a>
+            </p>
 
             <p className="mt-5 max-w-sm text-[13px] leading-6 text-muted-foreground">
               Reply time: 5–7 days. If we&rsquo;re slow, it&rsquo;s because

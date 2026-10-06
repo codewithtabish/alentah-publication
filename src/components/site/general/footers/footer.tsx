@@ -3,7 +3,7 @@
 // Footer — ALENTAH
 // Editorial masthead footer.
 //   - Sections column shows category titles with nested subs
-//   - Newsletter column has room for input + button
+//   - Newsletter column uses the shared subscribeToNewsletter action
 //   - Balanced 12-column grid
 //   - Year rendered client-side (no prerender error)
 //   - Social icons from ../theme/social-icons
@@ -21,6 +21,7 @@ import Link from "next/link";
 import { getCategories } from "@/actions/category/get-categories";
 import { InstagramIcon, LinkedinIcon, XIcon } from "../theme/social-icons";
 import { FooterYear } from "./footer-year";
+import { FooterNewsletterForm } from "./footer-newsletter-form";
 
 // ============================================================
 // TYPES
@@ -50,7 +51,6 @@ export interface FooterProps {
     x?: string;
     linkedin?: string;
   };
-  newsletterAction?: string;
   className?: string;
 }
 
@@ -80,7 +80,6 @@ export function Footer({
   company = DEFAULT_COMPANY,
   legal = DEFAULT_LEGAL,
   socials = {},
-  newsletterAction = "/api/newsletter",
   className,
 }: FooterProps) {
   const hasSocials = socials.instagram || socials.x || socials.linkedin;
@@ -124,6 +123,16 @@ export function Footer({
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">
               Slow journalism for curious minds. Depth over speed, quality
               over quantity, perspective over popularity.
+            </p>
+
+            {/* Contact email — plain text, select-all, no underline */}
+            <p className="mt-6 text-[13px] leading-none text-muted-foreground">
+              <span className="mr-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
+                Write to us
+              </span>
+              <span className="select-all font-mono text-foreground">
+                hello@alentah.com
+              </span>
             </p>
 
             {hasSocials && (
@@ -176,44 +185,9 @@ export function Footer({
               Get the best stories, once a week.
             </h6>
 
-            <form
-              action={newsletterAction}
-              method="post"
-              className="mt-4 flex flex-col gap-2"
-            >
-              <label htmlFor="footer-newsletter-email" className="sr-only">
-                Email address
-              </label>
-
-              <input
-                id="footer-newsletter-email"
-                type="email"
-                name="email"
-                required
-                autoComplete="email"
-                placeholder="Your email"
-                className={[
-                  "h-10 w-full min-w-0 rounded-md px-3",
-                  "border border-border bg-background",
-                  "text-[12px] text-foreground",
-                  "placeholder:text-muted-foreground/60",
-                  "focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/30",
-                ].join(" ")}
-              />
-
-              <button
-                type="submit"
-                className={[
-                  "inline-flex h-10 w-full items-center justify-center rounded-md px-4",
-                  "bg-primary text-primary-foreground",
-                  "text-[10px] font-bold uppercase tracking-[0.18em]",
-                  "transition-colors duration-200 hover:bg-primary/90",
-                  "whitespace-nowrap",
-                ].join(" ")}
-              >
-                Subscribe
-              </button>
-            </form>
+            <div className="mt-4">
+              <FooterNewsletterForm />
+            </div>
           </div>
         </div>
 
@@ -232,15 +206,6 @@ export function Footer({
 
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
             <span className="font-medium text-foreground">EN</span>
-            <span aria-hidden="true" className="text-muted-foreground/40">
-              ·
-            </span>
-            <button
-              type="button"
-              className="transition-colors duration-200 hover:text-foreground"
-            >
-              العربية
-            </button>
           </div>
         </div>
       </div>

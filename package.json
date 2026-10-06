@@ -8,8 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate"
-
   },
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Firefox versions",
+    "last 2 Safari versions",
+    "last 2 Edge versions"
+  ],
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1145.0",
     "@cerebras/cerebras_cloud_sdk": "^1.91.0",
@@ -39,6 +44,7 @@
     "@prisma/client": "^7.10.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
+    "critters": "^0.0.23",
     "editor-js-alignment-tune": "^1.0.1",
     "exa-js": "^2.25.0",
     "lucide-react": "^1.49.0",
@@ -49,6 +55,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.89.0",
+    "resend": "^6.32.0",
     "shadcn": "^4.21.1",
     "sharp": "^0.35.5",
     "sonner": "^2.0.8",

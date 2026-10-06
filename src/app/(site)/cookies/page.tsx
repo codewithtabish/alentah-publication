@@ -18,10 +18,12 @@ import { BackButton } from "@/components/site/general/backs/back-button";
 
 const SITE_URL = "https://www.alentah.com";
 
+const SHORT_DESCRIPTION =
+  "Which cookies we use, what they do, and how to turn them off. No ad network cookies. No cross-site tracking.";
+
 export const metadata: Metadata = {
   title: "Cookies Policy — Alentah",
-  description:
-    "Alentah uses a minimal set of cookies. Read exactly which ones, what they do, and how to turn them off. No ad network cookies. No cross-site tracking.",
+  description: SHORT_DESCRIPTION,
   keywords: [
     "cookie policy",
     "Alentah cookies",
@@ -43,8 +45,7 @@ export const metadata: Metadata = {
     url: "/cookies",
     siteName: "Alentah",
     title: "Cookies Policy — Alentah",
-    description:
-      "Small files, clearly explained. Exactly which cookies Alentah uses and how to turn them off.",
+    description: SHORT_DESCRIPTION,
     images: [
       {
         url: "/seo/og-image.png",
@@ -57,8 +58,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Cookies Policy — Alentah",
-    description:
-      "Small files, clearly explained. Exactly which cookies Alentah uses and how to turn them off.",
+    description: SHORT_DESCRIPTION,
     images: ["/seo/og-image.png"],
   },
   robots: {
@@ -184,7 +184,7 @@ export default function CookiesPage() {
       />
 
       {/* BACK BUTTON — hidden when there is no history to return to */}
-      <BackButton  />
+      <BackButton />
 
       {/* HERO */}
       <section

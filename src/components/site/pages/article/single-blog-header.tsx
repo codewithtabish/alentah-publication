@@ -3,6 +3,10 @@
 // BlogHeader — ALENTAH
 // Article hero: category, title, description, meta, banner.
 // Compact mobile scale — reads like a magazine column on phones.
+//
+// Performance:
+//   - Banner image uses priority + fetchPriority="high" + quality=85.
+//     It is the LCP element on every article page.
 // ============================================================
 
 import { CalendarDays, Clock3 } from "lucide-react";
@@ -290,6 +294,8 @@ export default function BlogHeader({
                   alt={bannerImageAlt || title}
                   fill
                   priority
+                  fetchPriority="high"
+                  quality={85}
                   sizes="100vw"
                   className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
                 />

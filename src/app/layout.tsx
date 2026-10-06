@@ -19,6 +19,9 @@ import { ExitIntentPopup } from "@/components/site/general/navbars/exit-intent-p
 // ============================================
 // FONTS
 // ============================================
+// next/font/google self-hosts these fonts at build time,
+// so no external preconnect / dns-prefetch hints are needed
+// for fonts.googleapis.com or fonts.gstatic.com.
 
 const fontSans = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -59,7 +62,7 @@ const SITE_URL = "https://www.alentah.com";
 const SITE_NAME = "Alentah";
 const SITE_TAGLINE = "Slow Journalism for Curious Minds";
 const SITE_DESCRIPTION =
-  "An independent editorial publication covering technology, business, finance, lifestyle, culture, travel, health, science, design, art, food, sports, politics, environment, education, and books. Edited by Talha Tabish.";
+  "Slow journalism for curious minds. Independent editorial coverage of technology, business, culture, and more — one story at a time.";
 
 // ============================================
 // VIEWPORT
@@ -428,20 +431,6 @@ export default function RootLayout({
       style={premiumTypography}
     >
       <head>
-        <link
-          rel="preconnect"
-          href="https://fonts.googleapis.com"
-        />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="dns-prefetch"
-          href="https://fonts.gstatic.com"
-        />
-
         {/* JSON-LD — Organization + WebSite schema for rich results */}
         <script
           type="application/ld+json"

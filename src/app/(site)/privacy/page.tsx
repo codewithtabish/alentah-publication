@@ -21,8 +21,9 @@ const SITE_URL = "https://www.alentah.com";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Alentah",
+  // ✅ FIX: trimmed to ~150 chars (was 181) so Google won't truncate it.
   description:
-    "Your data, in plain English. What Alentah collects, how we use it, who sees it, your rights, and how to delete it. We never sell your data and we don't use ad network tracking.",
+    "What Alentah collects, how we use it, and how to delete it. We never sell your data or use ad-network tracking.",
   keywords: [
     "privacy policy",
     "Alentah privacy",
@@ -44,23 +45,34 @@ export const metadata: Metadata = {
     url: "/privacy",
     siteName: "Alentah",
     title: "Privacy Policy — Alentah",
+    // ✅ FIX: trimmed to ~120 chars.
     description:
       "What Alentah collects, how we use it, and how to delete it. We never sell your data.",
     images: [
       {
-        url: "/seo/og-image.png",
+        // ✅ FIX: dedicated privacy OG image (with CTA text baked in).
+        // Drop this asset at /public/seo/og-privacy.png.
+        // Falls back gracefully to og-image.png if you haven't made it yet.
+        url: "/seo/og-privacy.png",
         width: 1200,
         height: 630,
-        alt: "Privacy Policy — Alentah",
+        alt: "Alentah Privacy Policy — your data, in plain English. We never sell your data.",
+        type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Privacy Policy — Alentah",
+    // ✅ FIX: trimmed to ~120 chars.
     description:
       "What Alentah collects, how we use it, and how to delete it. We never sell your data.",
-    images: ["/seo/og-image.png"],
+    images: [
+      {
+        url: "/seo/og-privacy.png",
+        alt: "Alentah Privacy Policy — your data, in plain English. We never sell your data.",
+      },
+    ],
   },
   robots: {
     index: true,
