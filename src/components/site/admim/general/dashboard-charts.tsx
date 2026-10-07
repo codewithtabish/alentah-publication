@@ -19,7 +19,10 @@ import {
   YAxis,
 } from "recharts";
 
-import type { DailyPoint, CategoryPoint } from "@/actions/admin/get-admin-dashboard";
+import type {
+  DailyPoint,
+  CategoryPoint,
+} from "@/actions/admin/get-admin-dashboard";
 
 // ────────────────────────────────────────────────────────────
 // SHARED STYLES
@@ -28,6 +31,13 @@ import type { DailyPoint, CategoryPoint } from "@/actions/admin/get-admin-dashbo
 const axisStyle = {
   fontSize: 10,
   fill: "hsl(var(--muted-foreground))",
+} as const;
+
+const tooltipContentStyle = {
+  background: "hsl(var(--card))",
+  border: "1px solid hsl(var(--border))",
+  borderRadius: 8,
+  fontSize: 12,
 } as const;
 
 function formatShortDate(iso: string): string {
@@ -53,7 +63,10 @@ export function ActivityChart({
   return (
     <div className="h-56 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 10, right: 12, left: -10, bottom: 0 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 10, right: 12, left: -10, bottom: 0 }}
+        >
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={color} stopOpacity={0.35} />
@@ -86,14 +99,9 @@ export function ActivityChart({
           />
 
           <Tooltip
-            labelFormatter={(v:any) => formatShortDate(String(v))}
-            contentStyle={{
-              background: "hsl(var(--card))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-            formatter={(value: number) => [value, label]}
+            labelFormatter={(v) => formatShortDate(String(v))}
+            contentStyle={tooltipContentStyle}
+            formatter={(value) => [Number(value ?? 0), label]}
           />
 
           <Area
@@ -146,13 +154,8 @@ export function TopCategoriesChart({ data }: { data: CategoryPoint[] }) {
           />
 
           <Tooltip
-            contentStyle={{
-              background: "hsl(var(--card))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-            formatter={(value: number) => [value, "Articles"]}
+            contentStyle={tooltipContentStyle}
+            formatter={(value) => [Number(value ?? 0), "Articles"]}
           />
 
           <Bar
