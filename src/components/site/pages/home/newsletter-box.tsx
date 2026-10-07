@@ -16,6 +16,11 @@
 //
 // The server still does the real dedupe (Prisma unique + Resend).
 // This is just to prevent redundant submits from this browser.
+//
+// Mobile polish:
+//   When locked (loading / success / already), the input is
+//   replaced with a compact icon + text line so the capsule
+//   doesn't show an empty bubble on small screens.
 // ============================================================
 
 import * as React from "react";
@@ -149,31 +154,68 @@ export function NewsletterBox() {
             Email address
           </label>
 
-          <input
-            id="home-newsletter-email"
-            type="email"
-            value={email}
-            onChange={(e) => handleChange(e.target.value)}
-            disabled={locked}
-            required
-            autoComplete="email"
-            placeholder={
-              isLoading
-                ? "Adding you to the list…"
-                : isSuccess || isAlready
-                  ? "You're on the list."
-                  : "Your email address"
-            }
-            className={cn(
-              "h-10 min-w-0 flex-1 bg-transparent px-3 sm:px-1",
-              "text-[13px] text-foreground",
-              "placeholder:text-muted-foreground/60",
-              "focus:outline-none",
-              "transition-colors duration-200",
-              isLoading && "opacity-60",
-              (isSuccess || isAlready) && "opacity-70",
-            )}
-          />
+          {/* ── Input OR compact locked line ── */}
+          {locked ? (
+            <div className="flex min-w-0 flex-1 items-center gap-2 px-3 sm:px-1">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className={cn(
+                  "size-3.5 shrink-0",
+                  isLoading ? "text-muted-foreground" : "text-primary",
+                )}
+                aria-hidden="true"
+              >
+                {isLoading ? (
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="9"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeDasharray="4 4"
+                    className="animate-spin origin-center"
+                  />
+                ) : (
+                  <path
+                    d="M4 12l5 5L20 6"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+              </svg>
+
+              <span
+                className={cn(
+                  "truncate text-[13px]",
+                  isError ? "text-destructive" : "text-muted-foreground",
+                )}
+              >
+                {isLoading
+                  ? "Adding you to the list…"
+                  : "You're on the list."}
+              </span>
+            </div>
+          ) : (
+            <input
+              id="home-newsletter-email"
+              type="email"
+              value={email}
+              onChange={(e) => handleChange(e.target.value)}
+              required
+              autoComplete="email"
+              placeholder="Your email address"
+              className={cn(
+                "h-10 min-w-0 flex-1 bg-transparent px-3 sm:px-1",
+                "text-[13px] text-foreground",
+                "placeholder:text-muted-foreground/60",
+                "focus:outline-none",
+                "transition-colors duration-200",
+              )}
+            />
+          )}
 
           <button
             type="submit"

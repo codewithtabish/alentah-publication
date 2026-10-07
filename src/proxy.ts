@@ -9,6 +9,14 @@ import { clerkClient, clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 // ============================================================
+// CONSTANTS
+// ============================================================
+
+// Production Clerk account portal.
+// This is the URL Clerk redirects to when a user needs to sign in.
+const SIGN_IN_URL = "https://accounts.alentah.com/sign-in";
+
+// ============================================================
 // HELPER — extract role from sessionClaims (handles string or object)
 // ============================================================
 
@@ -53,15 +61,11 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // ─── Use auth() instead of auth.protect() ───
-  // auth.protect() throws which can loop if the sign-in URL is misconfigured.
-  // auth() lets us handle the redirect manually.
   const { userId, sessionClaims } = await auth();
 
   // Not signed in → redirect to Clerk's hosted sign-in
   if (!userId) {
-    const signInUrl = new URL(
-      "https://joint-mantis-52.accounts.dev/sign-in",
-    );
+    const signInUrl = new URL(SIGN_IN_URL);
     signInUrl.searchParams.set("redirect_url", req.url);
     return NextResponse.redirect(signInUrl);
   }

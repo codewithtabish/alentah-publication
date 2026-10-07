@@ -22,7 +22,8 @@
 //
 // Performance:
 //   - Hero + LatestStories featured images use fetchPriority="high"
-//     and quality={85} to win LCP.
+//     so the browser discovers + downloads them immediately.
+//     This is the single biggest LCP win on mobile.
 //   - All other images stay lazy (Next.js default).
 //
 // NOTE: NewsletterBox is now a client component in
@@ -168,7 +169,6 @@ function Hero({ article }: { article: HomeBlogCard }) {
           fill
           priority
           fetchPriority="high"
-          quality={85}
           sizes="(max-width: 768px) 100vw, 40vw"
           className="object-cover scale-[1.01]"
         />
@@ -221,7 +221,6 @@ function ArticleCard({ article }: { article: HomeBlogCard }) {
           src={article.bannerImage}
           alt={article.title}
           fill
-          quality={80}
           sizes="(max-width: 640px) 100vw, 30vw"
           className="object-cover scale-[1.01]"
         />
@@ -302,7 +301,6 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
             fill
             priority
             fetchPriority="high"
-            quality={85}
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-cover scale-[1.01]"
           />
@@ -345,7 +343,6 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
                     src={editorImage}
                     alt={editorName}
                     fill
-                    quality={85}
                     sizes="44px"
                     className="object-cover scale-[1.01]"
                   />
@@ -386,7 +383,6 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
                       src={article.bannerImage}
                       alt={article.title}
                       fill
-                      quality={80}
                       sizes="(max-width: 640px) 96px, 160px"
                       className="object-cover scale-[1.01]"
                     />
@@ -460,7 +456,6 @@ function EditorsPicks({ articles }: { articles: HomeBlogCard[] }) {
                       src={article.bannerImage}
                       alt={article.title}
                       fill
-                      quality={80}
                       sizes="(max-width: 640px) 120px, 160px"
                       className="object-cover scale-[1.01]"
                     />
