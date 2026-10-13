@@ -64,6 +64,9 @@ const SITE_TAGLINE = "Slow Journalism for Curious Minds";
 const SITE_DESCRIPTION =
   "Slow journalism for curious minds. Independent editorial coverage of technology, business, culture, and more — one story at a time.";
 
+// Google AdSense publisher ID
+const ADSENSE_CLIENT = "ca-pub-3242419931272978";
+
 // ============================================
 // VIEWPORT
 // ============================================
@@ -201,6 +204,8 @@ export const metadata: Metadata = {
   other: {
     "msapplication-TileColor": "#6B4A2F",
     "msapplication-config": "/browserconfig.xml",
+    // AdSense account meta tag (backup verification method)
+    "google-adsense-account": ADSENSE_CLIENT,
   },
 };
 
@@ -431,6 +436,14 @@ export default function RootLayout({
       style={premiumTypography}
     >
       <head>
+        {/* Google AdSense — site verification + ads code.
+            Plain <script> (not next/script) so Google can detect it in the HTML <head>. */}
+        <script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+          crossOrigin="anonymous"
+        />
+
         {/* JSON-LD — Organization + WebSite schema for rich results */}
         <script
           type="application/ld+json"
