@@ -1262,9 +1262,10 @@ export const BlogPreviewer: React.FC<PreviewerProps> = ({
 
       <CodeBlockSwitcher />
 
+      {/* Removed horizontal padding — parent container handles it */}
       <article
         data-blog-article
-        className="prose min-w-0 max-w-none px-4 dark:prose-invert lg:px-0"
+        className="prose min-w-0 max-w-none dark:prose-invert"
       >
         {content.blocks.map((block: any, index: number) => (
           <React.Fragment key={index}>
