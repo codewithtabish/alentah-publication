@@ -3,16 +3,13 @@
 // ============================================================
 // HomeScreen — ALENTAH
 //
-// Layout (lg):
-//   Row 1 — Hero (8/12) | Trending + Newsletter + 300x250 (4/12)
-//   Row 2 — 3-card grid (8/12) + native ad under it
-//   Row 3 — Full-width 728x90 (md+)
-//   Row 4 — Latest Stories (full width, featured byline = editor)
-//   Row 5 — Native ad after Latest Stories
-//   Row 6 — Editor's Picks
-//
-// Sidebar is right-aligned inside its 4/12 track so no white
-// gap appears on the right side of the page.
+// Ad layout (all unique — no duplicate units on the same page):
+//   Sidebar:        300x250 (v0)
+//   Under cards:    Native  (v0)
+//   Before Latest:  728x90  (v0)
+//   In Latest:      300x250 (v2)
+//   After Latest:   300x250 (v1)
+//   Mobile bottom:  320x50  (v0)
 // ============================================================
 
 import Image from "next/image";
@@ -23,6 +20,7 @@ import { NewsletterBox } from "./newsletter-box";
 import {
   ADS_ENABLED,
   Banner300x250,
+  Banner320x50,
   Banner728x90,
   NativeAd,
 } from "../../general/ads/site-ads";
@@ -57,8 +55,7 @@ function getArticleHref(article: HomeBlogCard): string {
 }
 
 // ============================================================
-// AD SLOT — no background, no border, no padding box
-// (the `framed` prop is kept so existing usages still compile)
+// AD SLOT
 // ============================================================
 
 function AdSlot({
@@ -69,7 +66,6 @@ function AdSlot({
   children: React.ReactNode;
   className?: string;
   label?: string;
-  framed?: boolean;
 }) {
   if (!ADS_ENABLED) return null;
 
@@ -81,7 +77,7 @@ function AdSlot({
       <span className="mb-1.5 text-[9px] font-medium uppercase tracking-[0.22em] text-muted-foreground/60">
         {label}
       </span>
-      <div className="flex justify-center">{children}</div>
+      <div className="flex w-full justify-center">{children}</div>
     </aside>
   );
 }
@@ -150,28 +146,30 @@ export function HomeScreen({ blogs }: HomeScreenProps) {
                 ))}
               </div>
 
+              {/* NATIVE — variant 0 */}
               <AdSlot className="mt-8" label="Sponsored">
-                <NativeAd />
+                <NativeAd variant={0} />
               </AdSlot>
             </>
           )}
         </div>
 
-        {/* SIDEBAR — flush to the right edge of its 4/12 track */}
+        {/* SIDEBAR */}
         <aside className="flex h-full w-full flex-col gap-4 lg:col-span-4 lg:justify-self-end lg:ml-auto lg:max-w-[420px]">
           {trending.length > 0 && <Trending articles={trending} />}
           <NewsletterBox />
 
+          {/* 300x250 — variant 0 */}
           <AdSlot className="lg:sticky lg:top-24" label="Advertisement">
-            <Banner300x250 />
+            <Banner300x250 variant={0} />
           </AdSlot>
         </aside>
       </div>
 
-      {/* AD — full-width 728x90 before Latest Stories (md+) */}
+      {/* 728x90 — variant 0 (md+) */}
       {latestStories.length > 0 && (
         <AdSlot className="hidden md:flex" label="Advertisement">
-          <Banner728x90 />
+          <Banner728x90 variant={0} />
         </AdSlot>
       )}
 
@@ -180,10 +178,10 @@ export function HomeScreen({ blogs }: HomeScreenProps) {
         <LatestStories articles={latestStories} />
       )}
 
-      {/* AD — native after Latest Stories */}
+      {/* 300x250 after Latest Stories — variant 1 */}
       {latestStories.length > 0 && (
-        <AdSlot className="mx-auto max-w-4xl" label="Sponsored">
-          <NativeAd />
+        <AdSlot className="mx-auto max-w-4xl" label="Advertisement">
+          <Banner300x250 variant={1} />
         </AdSlot>
       )}
 
@@ -191,6 +189,11 @@ export function HomeScreen({ blogs }: HomeScreenProps) {
       {latestStories.length > 4 && (
         <EditorsPicks articles={latestStories.slice(4, 8)} />
       )}
+
+      {/* Mobile-only 320x50 leaderboard — variant 0 */}
+      <AdSlot className="md:hidden" label="Advertisement">
+        <Banner320x50 variant={0} />
+      </AdSlot>
     </div>
   );
 }
@@ -450,8 +453,9 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
 
                 {showInlineAd && (
                   <div className="py-5">
-                    <AdSlot framed={false} label="Advertisement">
-                      <Banner300x250 />
+                    {/* 300x250 — variant 2 */}
+                    <AdSlot label="Advertisement">
+                      <Banner300x250 variant={2} />
                     </AdSlot>
                   </div>
                 )}
@@ -527,8 +531,9 @@ function EditorsPicks({ articles }: { articles: HomeBlogCard[] }) {
 
                 {showInlineAd && (
                   <div className="mt-5">
-                    <AdSlot className="mx-auto max-w-3xl" label="Sponsored">
-                      <NativeAd />
+                    {/* 300x250 — variant 3 */}
+                    <AdSlot className="mx-auto max-w-3xl" label="Advertisement">
+                      <Banner300x250 variant={3} />
                     </AdSlot>
                   </div>
                 )}
@@ -556,10 +561,7 @@ function EditorsPicks({ articles }: { articles: HomeBlogCard[] }) {
 }
 
 // ============================================================
-// TRENDING — consistent rows, titles fill the full sidebar width
-// (text-wrap: wrap overrides any global "balance" on headings,
-//  which was causing titles to break early and leave empty
-//  space on the right)
+// TRENDING
 // ============================================================
 
 function Trending({ articles }: { articles: HomeBlogCard[] }) {

@@ -1,34 +1,4 @@
 // src/app/(site)/[category]/[slug]/page.tsx
-// ============================================================
-// Article Page — two-column reading layout
-// URL: /category/slug
-//
-// Layout:
-//   Mobile  → single column, TOC collapses above the article
-//   Desktop → [content 1fr] [sidebar 280px]  (sidebar on the RIGHT)
-//
-// Padding:
-//   Mobile  → px-0 (full-bleed, edge-to-edge)
-//   lg+     → px-8 / xl:px-10 (comfortable reading gutters)
-//
-// Ads (Adsterra) — no background box, label only:
-//   1. Under the header     → 728x90 (md+) / 300x250 (mobile)
-//   2. Sidebar (lg+)        → TOC, 300x250, 300x250,
-//                             then a sticky 300x250
-//   3. Inside the article   → 300x250 between paragraphs
-//                             (see BlogPreviewer)
-//   4. End of the article   → Native banner
-//   5. Bottom of the page   → mobile: 3 x 300x250 stacked
-//                             md: 728x90 + 2 x 300x250 side by side
-//                             lg+: 728x90 only
-//
-// SEO:
-//   - Rich generateMetadata (title, description, canonical,
-//     robots, OG article, Twitter, keywords, authors)
-//   - Article / BlogPosting JSON-LD (full schema)
-//   - BreadcrumbList JSON-LD (Home > Category > Article)
-//   - Publisher + Author entities
-// ============================================================
 
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
@@ -47,36 +17,20 @@ import { ArticleCommentsServer } from "@/components/site/admim/article/article-c
 import { ArticleBookmarkServer } from "@/components/site/admim/article/article-bookmark-server";
 import {
   ADS_ENABLED,
+  Banner160x600,
   Banner300x250,
+  Banner320x50,
   Banner728x90,
   NativeAd,
 } from "@/components/site/general/ads/site-ads";
 
-// ============================================================
-// TYPES
-// ============================================================
-
-type PageParams = {
-  category: string;
-  slug: string;
-};
-
-type PageProps = {
-  params: Promise<PageParams>;
-};
-
-// ============================================================
-// SITE CONSTANTS
-// ============================================================
+type PageParams = { category: string; slug: string };
+type PageProps = { params: Promise<PageParams> };
 
 const SITE_URL = "https://www.alentah.com";
 const SITE_NAME = "Alentah";
 const PUBLISHER_LOGO = `${SITE_URL}/seo/icon-512.png`;
 const FALLBACK_OG_IMAGE = `${SITE_URL}/seo/og-image.png`;
-
-// ============================================================
-// AD SLOT — no background, no border, label only
-// ============================================================
 
 function AdSlot({
   children,
@@ -105,74 +59,50 @@ function AdSlot({
   );
 }
 
-// ============================================================
-// SIDEBAR ADS — desktop only (lg+), stacked under the TOC
-//   Two normal ads, then one sticky ad that follows the scroll
-//   and fills the long empty space next to the article.
-// ============================================================
-
 function SidebarAds() {
   if (!ADS_ENABLED) return null;
 
   return (
-    <>
-      <AdSlot className="hidden lg:flex">
-        <Banner300x250 />
+    <div className="hidden w-full flex-col items-stretch gap-6 lg:sticky lg:top-24 lg:flex">
+      <AdSlot className="w-full">
+        <Banner160x600 variant={0} />
       </AdSlot>
 
-      <AdSlot className="hidden lg:flex">
-        <Banner300x250 />
+      <AdSlot className="w-full">
+        <Banner300x250 variant={1} />
       </AdSlot>
 
-      {/* Sticky: stays in view while the article scrolls */}
-      <div className="hidden lg:sticky lg:top-24 lg:block">
-        <AdSlot>
-          <Banner300x250 />
-        </AdSlot>
-      </div>
-    </>
+      <AdSlot className="w-full">
+        <Banner320x50 variant={0} />
+      </AdSlot>
+    </div>
   );
 }
-
-// ============================================================
-// BOTTOM ADS — fills the empty space at the end of the page
-//   mobile → 3 x 300x250 stacked
-//   md     → 728x90, then 2 x 300x250 side by side
-//   lg+    → 728x90 only (the sidebar already has ads)
-// ============================================================
 
 function BottomAds() {
   if (!ADS_ENABLED) return null;
 
   return (
     <div className="mt-10 space-y-8 px-4 sm:mt-12 lg:px-0">
-      {/* 728x90 — md+ */}
       <AdSlot className="hidden md:flex">
-        <Banner728x90 />
+        <Banner728x90 variant={0} />
       </AdSlot>
 
-      {/* Two 300x250 — mobile stacked, md side by side, hidden on lg+ */}
       <div className="grid grid-cols-1 justify-items-center gap-8 md:grid-cols-2 lg:hidden">
         <AdSlot>
-          <Banner300x250 />
+          <Banner300x250 variant={2} />
         </AdSlot>
-
         <AdSlot>
-          <Banner300x250 />
+          <Banner300x250 variant={3} />
         </AdSlot>
       </div>
 
-      {/* Third 300x250 — mobile only */}
       <AdSlot className="md:hidden">
-        <Banner300x250 />
+        <Banner300x250 variant={4} />
       </AdSlot>
     </div>
   );
 }
-
-// ============================================================
-// HELPERS
-// ============================================================
 
 function toAbsoluteUrl(pathOrUrl: string | null | undefined): string {
   if (!pathOrUrl) return FALLBACK_OG_IMAGE;
@@ -208,49 +138,35 @@ function countWords(content: unknown): number {
   }
 }
 
-// ============================================================
-// METADATA
-// ============================================================
-
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-
   const result = await getArticleBySlug(decodeURIComponent(slug));
 
   if (!result.success) {
     return {
       title: "Article not found",
-      robots: {
-        index: false,
-        follow: false,
-      },
+      robots: { index: false, follow: false },
     };
   }
 
   const article = result.article;
-
   const title = article.seo?.metaTitle || article.title;
   const description =
     article.seo?.metaDescription ||
     article.shortDescription ||
     `${article.title} — read on Alentah.`;
 
-  const ogImage = toAbsoluteUrl(
-    article.seo?.ogImage || article.bannerImage,
-  );
+  const ogImage = toAbsoluteUrl(article.seo?.ogImage || article.bannerImage);
   const twitterImage = toAbsoluteUrl(
-    article.seo?.twitterImage ||
-      article.seo?.ogImage ||
-      article.bannerImage,
+    article.seo?.twitterImage || article.seo?.ogImage || article.bannerImage,
   );
 
   const canonicalPath = `/${article.category.slug}/${
     article.subcategory?.slug ? `${article.subcategory.slug}/` : ""
   }${article.slug}`;
   const canonicalUrl = article.seo?.canonicalUrl || canonicalPath;
-
   const authorName = getAuthorName(article.author);
 
   const keywords = [
@@ -266,17 +182,11 @@ export async function generateMetadata({
   return {
     title,
     description,
-
     keywords,
-
     authors: [{ name: authorName, url: SITE_URL }],
     creator: authorName,
     publisher: SITE_NAME,
-
-    alternates: {
-      canonical: canonicalUrl,
-    },
-
+    alternates: { canonical: canonicalUrl },
     robots: {
       index: true,
       follow: true,
@@ -288,7 +198,6 @@ export async function generateMetadata({
         "max-video-preview": -1,
       },
     },
-
     openGraph: {
       type: "article",
       url: canonicalUrl,
@@ -313,7 +222,6 @@ export async function generateMetadata({
         },
       ],
     },
-
     twitter: {
       card: "summary_large_image",
       site: "@alentah",
@@ -325,10 +233,6 @@ export async function generateMetadata({
   };
 }
 
-// ============================================================
-// PAGE  (sync — wraps async content in Suspense)
-// ============================================================
-
 export default function CategoryArticlePage({ params }: PageProps) {
   return (
     <Suspense fallback={<ArticlePageSkeleton />}>
@@ -337,26 +241,17 @@ export default function CategoryArticlePage({ params }: PageProps) {
   );
 }
 
-// ============================================================
-// CONTENT  (async — reads params + fetches article)
-// ============================================================
-
 async function ArticleContent({ params }: { params: Promise<PageParams> }) {
   const { category, slug } = await params;
-
   const decodedCategory = decodeURIComponent(category);
   const decodedSlug = decodeURIComponent(slug);
 
   const result = await getArticleBySlug(decodedSlug);
 
-  // Real 404: article not in DB
-  if (!result.success) {
-    notFound();
-  }
+  if (!result.success) notFound();
 
   const blog = result.article;
 
-  // Soft warnings (do NOT 404 — render anyway)
   if (blog.category.slug !== decodedCategory) {
     console.warn(
       `[article-page] URL category "${decodedCategory}" does not match DB "${blog.category.slug}" for slug "${decodedSlug}". Rendering anyway.`,
@@ -369,39 +264,23 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
     );
   }
 
-  const tocItems: TableOfContentsItem[] = Array.isArray(
-    blog.tableOfContents,
-  )
+  const tocItems: TableOfContentsItem[] = Array.isArray(blog.tableOfContents)
     ? (blog.tableOfContents as TableOfContentsItem[])
     : [];
-
-  // ==========================================================
-  // STRUCTURED DATA
-  // ==========================================================
 
   const canonicalPath = `/${blog.category.slug}/${
     blog.subcategory?.slug ? `${blog.subcategory.slug}/` : ""
   }${blog.slug}`;
   const canonicalUrl = blog.seo?.canonicalUrl || `${SITE_URL}${canonicalPath}`;
-
-  const articleImage = toAbsoluteUrl(
-    blog.seo?.ogImage || blog.bannerImage,
-  );
-
+  const articleImage = toAbsoluteUrl(blog.seo?.ogImage || blog.bannerImage);
   const authorName = getAuthorName(blog.author);
-
   const wordCount = countWords(blog.content);
 
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Home",
-        item: SITE_URL,
-      },
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
       {
         "@type": "ListItem",
         position: 2,
@@ -430,10 +309,7 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": canonicalUrl,
-    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
     headline: blog.title,
     description: blog.shortDescription || blog.title,
     image: [articleImage],
@@ -460,21 +336,14 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
         height: 512,
       },
     },
-    ...(blog.category && {
-      articleSection: blog.category.name,
-    }),
+    ...(blog.category && { articleSection: blog.category.name }),
     ...(blog.subcategory && {
-      about: {
-        "@type": "Thing",
-        name: blog.subcategory.name,
-      },
+      about: { "@type": "Thing", name: blog.subcategory.name },
     }),
     ...(blog.tags.length > 0 && {
       keywords: blog.tags.map((t) => t.name).join(", "),
     }),
-    ...(blog.readingTime && {
-      timeRequired: `PT${blog.readingTime}M`,
-    }),
+    ...(blog.readingTime && { timeRequired: `PT${blog.readingTime}M` }),
     ...(wordCount > 0 && { wordCount }),
     inLanguage: "en",
     isAccessibleForFree: true,
@@ -483,23 +352,15 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
 
   return (
     <main className="w-full min-w-0 overflow-x-hidden px-0">
-      {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(articleJsonLd),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbJsonLd),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      {/* =====================================================
-          HERO HEADER (full-width, zero padding on mobile)
-      ====================================================== */}
       <BlogHeader
         title={blog.title}
         shortDescription={blog.shortDescription}
@@ -513,58 +374,38 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
         subcategory={blog.subcategory ?? blog.category}
       />
 
-      {/* =====================================================
-          AD 1 — UNDER THE HEADER
-            md+     → 728x90
-            mobile  → 300x250
-      ====================================================== */}
       <div className="mx-auto w-full min-w-0 max-w-[1440px] px-4 pt-6 lg:px-8 xl:px-10">
         <AdSlot className="hidden md:flex">
-          <Banner728x90 />
+          <Banner728x90 variant={0} />
         </AdSlot>
 
         <AdSlot className="md:hidden">
-          <Banner300x250 />
+          <Banner300x250 variant={0} />
         </AdSlot>
       </div>
 
-      {/* =====================================================
-          READING GRID
-            mobile  → 1 column (TOC above body), px-0
-            lg+     → [content 1fr] [sidebar 280px], px-8 / px-10
-      ====================================================== */}
       <div className="mx-auto w-full min-w-0 max-w-[1440px] px-0 pb-10 pt-6 sm:pb-12 lg:px-8 lg:pb-16 xl:px-10">
         <div
           className={[
             "grid w-full min-w-0 gap-8 lg:gap-10 xl:gap-14",
             "grid-cols-1",
-            "lg:grid-cols-[minmax(0,1fr)_280px]",
-            "xl:grid-cols-[minmax(0,1fr)_300px]",
+            "lg:grid-cols-[minmax(0,1fr)_320px]",
+            "xl:grid-cols-[minmax(0,1fr)_340px]",
           ].join(" ")}
         >
-          {/* =================================================
-              ARTICLE BODY  (left column on lg+)
-          ================================================= */}
           <div className="order-2 min-w-0 w-full lg:order-1">
             <article className="relative min-w-0 w-full max-w-none">
-              {/* AD 3 — inline 300x250 ads live inside BlogPreviewer */}
               <BlogPreviewer
                 content={blog.content}
                 tableOfContents={undefined}
               />
 
-              {/* =============================================
-                  AD 4 — NATIVE BANNER (end of article)
-              ============================================== */}
               <div className="mt-8 px-4 lg:px-0">
                 <AdSlot label="Sponsored" className="overflow-visible">
-                  <NativeAd />
+                  <NativeAd variant={0} />
                 </AdSlot>
               </div>
 
-              {/* =============================================
-                  SAVE / BOOKMARK ACTION
-              ============================================== */}
               <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border px-4 pt-6 sm:mt-12 lg:px-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Enjoyed this story?
@@ -579,26 +420,13 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
                 </Suspense>
               </div>
 
-              {/* =============================================
-                  COMMENTS
-              ============================================== */}
               <Suspense fallback={<ArticleCommentsSkeleton />}>
-                <ArticleCommentsServer
-                  blogId={blog.id}
-                  blogSlug={blog.slug}
-                />
+                <ArticleCommentsServer blogId={blog.id} blogSlug={blog.slug} />
               </Suspense>
             </article>
           </div>
 
-          {/* =================================================
-              SIDEBAR
-                mobile → TOC above body (order-1), full-bleed
-                lg+    → right column (order-2), full height:
-                         TOC, 300x250, 300x250, sticky 300x250
-          ================================================= */}
           <aside className="order-1 flex w-full min-w-0 flex-col gap-6 lg:order-2 lg:self-stretch">
-            {/* TOC stays sticky at the top on desktop */}
             <div className="lg:sticky lg:top-24 lg:z-10">
               <ArticleTOC items={tocItems} className="w-full" />
             </div>
@@ -607,9 +435,6 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
           </aside>
         </div>
 
-        {/* ===================================================
-            AD 5 — BOTTOM OF THE PAGE
-        =================================================== */}
         <BottomAds />
       </div>
     </main>

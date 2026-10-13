@@ -2,7 +2,7 @@
 
 import { TableOfContentsItem } from "@/schemas/blog-schema";
 import Image from "next/image";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import CodeBlockSwitcher from "./code-article-switcher";
 import {
   ADS_ENABLED,
@@ -11,33 +11,28 @@ import {
   NativeAd,
 } from "../../general/ads/site-ads";
 
-type Props = {
+type PreviewerProps = {
   content: any;
   tableOfContents?: TableOfContentsItem[];
+  stickyOffset?: number;
 };
 
-/* =========================================================
-   AD SETTINGS (in-article ads)
-
-   Counted in "renderable content blocks" (paragraphs, lists,
-   images, code, quotes, tables, alerts — but NOT headings,
-   NOT the TOC block itself).
-
-   - First ad appears after content block number AD_FIRST_AFTER
-   - Next ads appear every AD_GAP content blocks
-   - Never more than AD_MAX_INLINE ads in one article
-   - Never directly after a heading (the algorithm simply
-     pushes the ad one block further instead of giving up)
-   - Never as the very last block
-   - Fallback: any article with 2+ renderable blocks gets
-     at least one ad
-   - Ads rotate between 300x250 → native → 728x90 so
-     consecutive ads never look the same
-   ========================================================= */
+type SidebarProps = {
+  content: any;
+  tableOfContents?: TableOfContentsItem[];
+  stickyOffset?: number;
+  showAd?: boolean;
+};
 
 const AD_FIRST_AFTER = 2;
 const AD_GAP = 3;
 const AD_MAX_INLINE = 5;
+
+const NATIVE_EARLY_VARIANT = 10;
+const NATIVE_MID_VARIANT = 11;
+const NATIVE_LATE_VARIANT = 12;
+
+const SIDEBAR_AD_VARIANT = 20;
 
 const TOC_TYPES = new Set([
   "toc",
@@ -48,30 +43,31 @@ const TOC_TYPES = new Set([
 
 const renderHTML = (html: string | undefined | null) => {
   if (!html || html.trim() === "") return undefined;
-
-  return {
-    __html: html,
-  };
+  return { __html: html };
 };
 
-/* =========================================================
-   IMAGE BLOCK
-   ========================================================= */
+const stripHtml = (html: string) =>
+  html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
-const ImageBlock: React.FC<{
-  file?: any;
-  caption?: string;
-}> = ({ file, caption }) => {
+const ImageBlock: React.FC<{ file?: any; caption?: string }> = ({
+  file,
+  caption,
+}) => {
   if (!file?.url) return null;
 
   return (
-    <figure className="my-10 flex flex-col items-center">
+    <figure className="not-prose my-10 flex flex-col items-center">
       <div className="w-full overflow-hidden rounded-2xl border border-border bg-muted/20 shadow-sm">
         <Image
           src={file.url}
           alt={caption || "Blog image"}
           width={1200}
           height={675}
+          sizes="(min-width: 1024px) 760px, 100vw"
           className="h-auto max-h-[650px] w-full object-contain"
         />
       </div>
@@ -84,10 +80,6 @@ const ImageBlock: React.FC<{
     </figure>
   );
 };
-
-/* =========================================================
-   CODE BLOCK
-   ========================================================= */
 
 const CodeBlock: React.FC<{
   code?: string;
@@ -131,12 +123,8 @@ const CodeBlock: React.FC<{
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(code);
-
       setCopied(true);
-
-      window.setTimeout(() => {
-        setCopied(false);
-      }, 1800);
+      window.setTimeout(() => setCopied(false), 1800);
     } catch (error) {
       console.error("Failed to copy code:", error);
     }
@@ -161,7 +149,6 @@ const CodeBlock: React.FC<{
             <span className="truncate text-sm font-medium text-foreground">
               {title}
             </span>
-
             <span className="hidden rounded-md border border-border bg-muted px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground sm:inline-flex">
               {languageLabel}
             </span>
@@ -191,7 +178,6 @@ const CodeBlock: React.FC<{
                   strokeLinejoin="round"
                 />
               </svg>
-
               <span>Copied</span>
             </>
           ) : (
@@ -211,7 +197,6 @@ const CodeBlock: React.FC<{
                   stroke="currentColor"
                   strokeWidth="1.8"
                 />
-
                 <path
                   d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
                   stroke="currentColor"
@@ -219,7 +204,6 @@ const CodeBlock: React.FC<{
                   strokeLinecap="round"
                 />
               </svg>
-
               <span>Copy</span>
             </>
           )}
@@ -238,10 +222,6 @@ const CodeBlock: React.FC<{
   );
 };
 
-/* =========================================================
-   SLUGIFY
-   ========================================================= */
-
 function slugifyHeader(text: string) {
   return text
     .toLowerCase()
@@ -251,43 +231,160 @@ function slugifyHeader(text: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-/* =========================================================
-   TOC DATA
-   ========================================================= */
+function getHeadingIds(blocks: any[]): Record<number, string> {
+  const used: Record<string, number> = {};
+  const result: Record<number, string> = {};
 
-function getTableOfContentsItemData(item: TableOfContentsItem) {
-  const tocItem = item as TableOfContentsItem & {
-    id?: string;
-    text?: string;
-    title?: string;
-    label?: string;
-    href?: string;
-    slug?: string;
-    level?: number;
-  };
+  blocks.forEach((block, index) => {
+    if (block?.type?.toLowerCase() !== "header") return;
+    const raw = block.data?.text;
+    if (typeof raw !== "string" || !raw.trim()) return;
 
-  const title = tocItem.title || tocItem.text || tocItem.label || "";
+    const base = slugifyHeader(stripHtml(raw)) || `section-${index}`;
+    const count = used[base] ?? 0;
+    used[base] = count + 1;
+    result[index] = count === 0 ? base : `${base}-${count}`;
+  });
 
-  const rawId = tocItem.slug || tocItem.id || tocItem.href || "";
-
-  const id = rawId.replace(/^#/, "").trim();
-
-  return {
-    id: id || slugifyHeader(title),
-    title,
-    level: tocItem.level || 2,
-  };
+  return result;
 }
 
-/* =========================================================
-   AD HELPERS
-   ========================================================= */
+type TocItem = { id: string; title: string; level: number };
+
+function buildToc(
+  blocks: any[],
+  headingIds: Record<number, string>,
+  fallback: TableOfContentsItem[],
+): TocItem[] {
+  const all: TocItem[] = [];
+
+  blocks.forEach((block, index) => {
+    const id = headingIds[index];
+    if (!id) return;
+    all.push({
+      id,
+      title: stripHtml(String(block.data.text)),
+      level: Math.min(Math.max(block.data.level || 2, 1), 6),
+    });
+  });
+
+  const main = all.filter((item) => item.level >= 2 && item.level <= 3);
+  if (main.length) return main;
+  if (all.length) return all;
+
+  return fallback
+    .map((item) => {
+      const t = item as TableOfContentsItem & {
+        id?: string;
+        text?: string;
+        title?: string;
+        label?: string;
+        href?: string;
+        slug?: string;
+        level?: number;
+      };
+      const title = t.title || t.text || t.label || "";
+      const rawId = (t.slug || t.id || t.href || "").replace(/^#/, "").trim();
+      return {
+        id: rawId || slugifyHeader(title),
+        title,
+        level: t.level || 2,
+      };
+    })
+    .filter((item) => item.id && item.title);
+}
+
+function getReadingMinutes(blocks: any[]) {
+  let words = 0;
+
+  blocks.forEach((b: any) => {
+    const d = b?.data ?? {};
+    const texts: string[] = [];
+    if (typeof d.text === "string") texts.push(d.text);
+    if (typeof d.itemsContent === "string") texts.push(d.itemsContent);
+    if (typeof d.message === "string") texts.push(d.message);
+    if (Array.isArray(d.items)) {
+      d.items.forEach((it: any) =>
+        texts.push(typeof it === "string" ? it : it?.content || it?.text || ""),
+      );
+    }
+    texts.forEach((t) => {
+      const clean = stripHtml(t);
+      if (clean) words += clean.split(/\s+/).length;
+    });
+  });
+
+  return Math.max(1, Math.round(words / 220));
+}
+
+function useArticleScroll(toc: TocItem[], stickyOffset: number) {
+  const [progress, setProgress] = useState(0);
+  const [activeId, setActiveId] = useState("");
+
+  useEffect(() => {
+    const headings = toc
+      .map((item) => document.getElementById(item.id))
+      .filter((el): el is HTMLElement => Boolean(el));
+
+    let ticking = false;
+
+    const update = () => {
+      ticking = false;
+
+      const article = document.querySelector<HTMLElement>(
+        "[data-blog-article]",
+      );
+      if (article) {
+        const rect = article.getBoundingClientRect();
+        const total = Math.max(rect.height - window.innerHeight * 0.6, 1);
+        setProgress(Math.min(Math.max(-rect.top / total, 0), 1));
+      }
+
+      if (headings.length) {
+        const offset = stickyOffset + 60;
+        let current = headings[0].id;
+        for (const heading of headings) {
+          if (heading.getBoundingClientRect().top <= offset) {
+            current = heading.id;
+          } else {
+            break;
+          }
+        }
+        setActiveId(current);
+      }
+    };
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [toc, stickyOffset]);
+
+  return { progress, activeId, setActiveId };
+}
+
+function scrollToId(id: string) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  window.requestAnimationFrame(() => {
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
 
 function isRenderableBlock(block: any): boolean {
   if (!block) return false;
 
   const type = block.type?.toLowerCase();
-
   if (!type || TOC_TYPES.has(type)) return false;
 
   const data = block.data ?? {};
@@ -325,24 +422,8 @@ function isRenderableBlock(block: any): boolean {
   }
 }
 
-/**
- * Returns the set of block indexes AFTER which an ad is rendered.
- *
- * Algorithm (fixed):
- *   1. Walk every renderable block in order.
- *   2. Place the first ad after AD_FIRST_AFTER renderable blocks.
- *   3. Place the next ad after AD_GAP more renderable blocks.
- *   4. Never place directly after a heading — if the next block
- *      is a heading, skip forward to the block after it.
- *   5. Never place after the very last renderable block.
- *   6. Cap at AD_MAX_INLINE.
- *   7. Fallback: if nothing was placed and the article has ≥2
- *      renderable blocks, place one after the first block that
- *      is not a heading.
- */
 function getAdBlockIndexes(blocks: any[]): Set<number> {
   const result = new Set<number>();
-
   const renderableIndexes: number[] = [];
 
   blocks.forEach((block, index) => {
@@ -350,7 +431,6 @@ function getAdBlockIndexes(blocks: any[]): Set<number> {
   });
 
   const total = renderableIndexes.length;
-
   if (total < 2) return result;
 
   let lastAdNumber = 0;
@@ -359,18 +439,12 @@ function getAdBlockIndexes(blocks: any[]): Set<number> {
     if (result.size >= AD_MAX_INLINE) break;
 
     const number = position + 1;
-
-    // Never as the very last renderable block
     if (number >= total) break;
 
     const blockIndex = renderableIndexes[position];
     const blockType = blocks[blockIndex]?.type?.toLowerCase();
-
-    // Don't place an ad right after a heading — try the next block
     if (blockType === "header") continue;
 
-    // Also don't place an ad where the *next* renderable block is
-    // a heading (would be an orphan heading under an ad).
     const nextBlockIndex = renderableIndexes[position + 1];
     const nextBlockType =
       nextBlockIndex !== undefined
@@ -389,12 +463,14 @@ function getAdBlockIndexes(blocks: any[]): Set<number> {
     }
   }
 
-  /* Fallback: guarantee at least one ad if the article is long enough */
   if (result.size === 0) {
-    for (let position = 0; position < renderableIndexes.length - 1; position++) {
+    for (
+      let position = 0;
+      position < renderableIndexes.length - 1;
+      position++
+    ) {
       const blockIndex = renderableIndexes[position];
       const blockType = blocks[blockIndex]?.type?.toLowerCase();
-
       if (blockType !== "header") {
         result.add(blockIndex);
         break;
@@ -405,16 +481,107 @@ function getAdBlockIndexes(blocks: any[]): Set<number> {
   return result;
 }
 
-/* =========================================================
-   IN-ARTICLE AD DISPATCHER
+function getEarlyNativeIndex(blocks: any[]): number {
+  const renderable: number[] = [];
+  blocks.forEach((b, i) => {
+    if (isRenderableBlock(b)) renderable.push(i);
+  });
 
-   Rotates formats so consecutive ads never look the same.
-   All three ad components now accept `variant`, so we pass
-   `order` to each one. `order` also drives which Adsterra
-   key gets used (see site-ads.tsx).
+  if (renderable.length < 3) return -1;
 
-   Format cycle:  300x250 → native → 728x90 → repeat
-   ========================================================= */
+  for (let pos = AD_FIRST_AFTER - 1; pos < renderable.length - 1; pos++) {
+    const idx = renderable[pos];
+    const t = blocks[idx]?.type?.toLowerCase();
+    const nextIdx = renderable[pos + 1];
+    const nextT =
+      nextIdx !== undefined ? blocks[nextIdx]?.type?.toLowerCase() : undefined;
+    if (t === "header" || nextT === "header") continue;
+    return idx;
+  }
+  return -1;
+}
+
+function getMidNativeIndex(blocks: any[]): number {
+  const renderable: number[] = [];
+  blocks.forEach((b, i) => {
+    if (isRenderableBlock(b)) renderable.push(i);
+  });
+
+  const total = renderable.length;
+  if (total < 5) return -1;
+
+  const target = Math.floor(total / 2);
+
+  for (let off = 0; off < total; off++) {
+    const candidates = [target - off, target + off];
+    for (const pos of candidates) {
+      if (pos <= 0 || pos >= total) continue;
+      const idx = renderable[pos - 1];
+      const t = blocks[idx]?.type?.toLowerCase();
+      const nextIdx = renderable[pos];
+      const nextT =
+        nextIdx !== undefined
+          ? blocks[nextIdx]?.type?.toLowerCase()
+          : undefined;
+      if (t === "header" || nextT === "header") continue;
+      return idx;
+    }
+  }
+  return -1;
+}
+
+function getLateNativeIndex(blocks: any[]): number {
+  const renderable: number[] = [];
+  blocks.forEach((b, i) => {
+    if (isRenderableBlock(b)) renderable.push(i);
+  });
+
+  const total = renderable.length;
+  if (total < 8) return -1;
+
+  const target = Math.floor(total * 0.78);
+
+  for (let off = 0; off < total; off++) {
+    const candidates = [target - off, target + off];
+    for (const pos of candidates) {
+      if (pos <= 0 || pos >= total - 1) continue;
+      const idx = renderable[pos - 1];
+      const t = blocks[idx]?.type?.toLowerCase();
+      const nextIdx = renderable[pos];
+      const nextT =
+        nextIdx !== undefined
+          ? blocks[nextIdx]?.type?.toLowerCase()
+          : undefined;
+      if (t === "header" || nextT === "header") continue;
+      return idx;
+    }
+  }
+  return -1;
+}
+
+function AdFrame({
+  label,
+  children,
+  className = "",
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <aside
+      aria-label={label}
+      className={[
+        "not-prose flex w-full min-w-0 max-w-full flex-col items-center",
+        "rounded-2xl border border-border/60 bg-muted/20 px-2 py-3",
+        className,
+      ].join(" ")}
+    >
+      <span className="mb-2 text-[11px] text-muted-foreground/70">{label}</span>
+      {children}
+    </aside>
+  );
+}
 
 function InArticleAd({ order }: { order: number }) {
   if (!ADS_ENABLED) return null;
@@ -423,7 +590,7 @@ function InArticleAd({ order }: { order: number }) {
 
   if (slot === 0) {
     return (
-      <div className="flex min-h-[250px] w-full items-center justify-center">
+      <div className="flex min-h-[250px] w-full items-center justify-center overflow-hidden">
         <Banner300x250 variant={order} />
       </div>
     );
@@ -431,18 +598,17 @@ function InArticleAd({ order }: { order: number }) {
 
   if (slot === 1) {
     return (
-      <div className="flex min-h-[180px] w-full items-center justify-center">
+      <div className="flex min-h-[180px] w-full items-center justify-center overflow-hidden">
         <NativeAd variant={order} />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-[90px] w-full items-center justify-center">
+    <div className="flex min-h-[90px] w-full items-center justify-center overflow-hidden">
       <div className="hidden md:block">
         <Banner728x90 variant={order} />
       </div>
-      {/* Mobile fallback: 300x250 instead of 728x90 */}
       <div className="md:hidden">
         <Banner300x250 variant={order} />
       </div>
@@ -450,159 +616,219 @@ function InArticleAd({ order }: { order: number }) {
   );
 }
 
-/* =========================================================
-   BLOG PREVIEWER
-   ========================================================= */
+function NativeSlot({ variant }: { variant: number }) {
+  if (!ADS_ENABLED) return null;
 
-export const BlogPreviewer: React.FC<Props> = ({
+  return (
+    <AdFrame label="Sponsored" className="my-10">
+      <div className="flex min-h-[180px] w-full items-center justify-center overflow-hidden">
+        <NativeAd variant={variant} />
+      </div>
+    </AdFrame>
+  );
+}
+
+function TocList({
+  items,
+  activeId,
+  onSelect,
+}: {
+  items: TocItem[];
+  activeId: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <ul className="relative m-0 list-none space-y-0.5 border-l border-border p-0">
+      {items.map((item, index) => {
+        const isActive = activeId === item.id;
+        return (
+          <li key={`${item.id}-${index}`} className="m-0 p-0">
+            <button
+              type="button"
+              data-toc-id={item.id}
+              onClick={() => onSelect(item.id)}
+              aria-current={isActive ? "location" : undefined}
+              style={{
+                paddingLeft: `${Math.max(item.level - 2, 0) * 14 + 14}px`,
+              }}
+              className={[
+                "relative -ml-px block w-full border-l-2 py-2 pr-3 text-left text-[13.5px] leading-5 transition-colors duration-200",
+                isActive
+                  ? "border-primary font-semibold text-primary"
+                  : "border-transparent text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground",
+              ].join(" ")}
+            >
+              {item.title}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+export const BlogSidebar: React.FC<SidebarProps> = ({
   content,
   tableOfContents = [],
+  stickyOffset = 88,
+  showAd = true,
+}) => {
+  const blocks = useMemo(
+    () => (Array.isArray(content?.blocks) ? content.blocks : []),
+    [content],
+  );
+  const headingIds = useMemo(() => getHeadingIds(blocks), [blocks]);
+  const toc = useMemo(
+    () => buildToc(blocks, headingIds, tableOfContents),
+    [blocks, headingIds, tableOfContents],
+  );
+  const readingMinutes = useMemo(() => getReadingMinutes(blocks), [blocks]);
+
+  const { progress, activeId } = useArticleScroll(toc, stickyOffset);
+  const tocBoxRef = useRef<HTMLDivElement>(null);
+
+  const percent = Math.round(progress * 100);
+  const minutesLeft = Math.max(0, Math.ceil(readingMinutes * (1 - progress)));
+
+  useEffect(() => {
+    const box = tocBoxRef.current;
+    if (!box || !activeId) return;
+    const el = box.querySelector<HTMLElement>(
+      `[data-toc-id="${CSS.escape(activeId)}"]`,
+    );
+    if (!el) return;
+    const top =
+      el.getBoundingClientRect().top -
+      box.getBoundingClientRect().top +
+      box.scrollTop -
+      box.clientHeight / 2 +
+      el.clientHeight / 2;
+    box.scrollTo({ top, behavior: "smooth" });
+  }, [activeId]);
+
+  if (!blocks.length) return null;
+
+  return (
+    <aside aria-label="Article sidebar" className="hidden min-w-0 lg:block">
+      <div
+        className="sticky flex flex-col gap-4 overflow-y-auto pb-1 scrollbar-none [&::-webkit-scrollbar]:hidden"
+        style={{
+          top: stickyOffset,
+          maxHeight: `calc(100vh - ${stickyOffset + 16}px)`,
+        }}
+      >
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          <div className="px-5 py-4">
+            <div className="mb-2.5 flex items-baseline justify-between">
+              <span className="text-sm font-semibold text-foreground">
+                {progress >= 0.98 ? "You finished reading" : "Reading progress"}
+              </span>
+              <span className="text-sm tabular-nums text-muted-foreground">
+                {percent}%
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-[width] duration-150"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+            <p className="mt-2.5 text-xs text-muted-foreground">
+              {progress >= 0.98
+                ? `${readingMinutes} min read`
+                : `${minutesLeft} min left of ${readingMinutes} min`}
+            </p>
+          </div>
+
+          {toc.length > 0 && (
+            <div className="border-t border-border px-5 py-4">
+              <p className="mb-3 text-sm font-semibold text-foreground">
+                In this article
+              </p>
+              <div
+                ref={tocBoxRef}
+                className="relative max-h-[38vh] overflow-y-auto pr-1 scrollbar-thin"
+              >
+                <TocList
+                  items={toc}
+                  activeId={activeId}
+                  onSelect={(id) => scrollToId(id)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {ADS_ENABLED && showAd && (
+          <AdFrame label="Advertisement">
+            <div className="flex min-h-[250px] w-full items-center justify-center overflow-hidden">
+              <Banner300x250 variant={SIDEBAR_AD_VARIANT} />
+            </div>
+          </AdFrame>
+        )}
+
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+            <path
+              d="m6 15 6-6 6 6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Back to top
+        </button>
+      </div>
+    </aside>
+  );
+};
+
+export const BlogPreviewer: React.FC<PreviewerProps> = ({
+  content,
+  tableOfContents = [],
+  stickyOffset = 88,
 }) => {
   const [openToggles, setOpenToggles] = useState<Record<string, boolean>>({});
-  const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<string>("");
 
-  /* =========================================================
-     TABLE OF CONTENTS DATA
-     ========================================================= */
-
-  const validTableOfContents = useMemo(() => {
-    return tableOfContents
-      .map(getTableOfContentsItemData)
-      .filter((item) => item.id && item.title);
-  }, [tableOfContents]);
-
-  /* =========================================================
-     AD POSITIONS
-     ========================================================= */
-
-  const adBlockIndexes = useMemo(
-    () =>
-      getAdBlockIndexes(Array.isArray(content?.blocks) ? content.blocks : []),
+  const blocks = useMemo(
+    () => (Array.isArray(content?.blocks) ? content.blocks : []),
     [content],
   );
 
-  /* Sorted positions → used to give each ad its own slot index */
+  const headingIds = useMemo(() => getHeadingIds(blocks), [blocks]);
+  const toc = useMemo(
+    () => buildToc(blocks, headingIds, tableOfContents),
+    [blocks, headingIds, tableOfContents],
+  );
+
+  const adBlockIndexes = useMemo(() => getAdBlockIndexes(blocks), [blocks]);
   const adOrder = useMemo(
     () => Array.from(adBlockIndexes).sort((a, b) => a - b),
     [adBlockIndexes],
   );
+  const earlyNativeIndex = useMemo(() => getEarlyNativeIndex(blocks), [blocks]);
+  const midNativeIndex = useMemo(() => getMidNativeIndex(blocks), [blocks]);
+  const lateNativeIndex = useMemo(() => getLateNativeIndex(blocks), [blocks]);
 
-  /* =========================================================
-     SMOOTH SCROLL
-     ========================================================= */
+  const { progress } = useArticleScroll(toc, stickyOffset);
 
   useEffect(() => {
-    if (typeof document === "undefined") return;
-
     const html = document.documentElement;
-
-    const previousScrollBehavior = html.style.scrollBehavior;
-
+    const previous = html.style.scrollBehavior;
     html.style.scrollBehavior = "smooth";
-
     return () => {
-      html.style.scrollBehavior = previousScrollBehavior;
+      html.style.scrollBehavior = previous;
     };
   }, []);
 
-  /* =========================================================
-     ACTIVE SECTION OBSERVER
-     ========================================================= */
-
-  useEffect(() => {
-    if (!validTableOfContents.length) return;
-
-    const headingElements = validTableOfContents
-      .map((item) => document.getElementById(item.id))
-      .filter((element): element is HTMLElement => Boolean(element));
-
-    if (!headingElements.length) return;
-
-    let ticking = false;
-
-    const updateActiveSection = () => {
-      const offset = 140;
-
-      let currentSection = headingElements[0]?.id || "";
-
-      for (const heading of headingElements) {
-        const rect = heading.getBoundingClientRect();
-
-        if (rect.top <= offset) {
-          currentSection = heading.id;
-        } else {
-          break;
-        }
-      }
-
-      setActiveSection(currentSection);
-
-      ticking = false;
-    };
-
-    const handleScroll = () => {
-      if (ticking) return;
-
-      ticking = true;
-
-      window.requestAnimationFrame(updateActiveSection);
-    };
-
-    updateActiveSection();
-
-    window.addEventListener("scroll", handleScroll, {
-      passive: true,
-    });
-
-    window.addEventListener("resize", handleScroll);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", handleScroll);
-    };
-  }, [validTableOfContents]);
-
-  /* =========================================================
-     TOC CLICK
-     ========================================================= */
-
-  const handleTableOfContentsClick = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    id: string,
-  ) => {
-    event.preventDefault();
-
-    const target = document.getElementById(id);
-
-    if (!target) return;
-
-    setActiveSection(id);
-
-    setIsTableOfContentsOpen(false);
-
-    window.requestAnimationFrame(() => {
-      target.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    });
-  };
-
-  /* =========================================================
-     TOGGLE
-     ========================================================= */
-
   const handleToggleClick = (id: string) => {
-    setOpenToggles((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+    setOpenToggles((prev) => ({ ...prev, [id]: !prev[id] }));
   };
-
-  /* =========================================================
-     EMPTY CONTENT
-     ========================================================= */
 
   if (!content || !content.blocks?.length) {
     return (
@@ -611,10 +837,6 @@ export const BlogPreviewer: React.FC<Props> = ({
       </div>
     );
   }
-
-  /* =========================================================
-     ALERT STYLES
-     ========================================================= */
 
   const alertClasses: Record<string, string> = {
     primary: "border-primary/30 bg-primary/10 text-foreground",
@@ -633,29 +855,23 @@ export const BlogPreviewer: React.FC<Props> = ({
     right: "text-right",
   };
 
-  /* =========================================================
-     RENDER ONE BLOCK
-     ========================================================= */
+  const readableText: React.CSSProperties = {
+    textAlign: "left",
+    hyphens: "none",
+    WebkitHyphens: "none",
+    overflowWrap: "break-word",
+  };
 
   const renderBlock = (block: any, index: number): React.ReactNode => {
     const type = block.type?.toLowerCase();
 
-    if (TOC_TYPES.has(type)) {
-      return null;
-    }
+    if (TOC_TYPES.has(type)) return null;
 
     switch (type) {
-      /* ===================================================
-         TOGGLE
-         =================================================== */
-
       case "toggle": {
-        const isOpen =
-          openToggles[block.id] ?? block.data.status === "open";
-
-        if (!block.data.text && !block.data.itemsContent) {
-          return null;
-        }
+        const toggleId = String(block.id ?? `toggle-${index}`);
+        const isOpen = openToggles[toggleId] ?? block.data.status === "open";
+        if (!block.data.text && !block.data.itemsContent) return null;
 
         return (
           <div
@@ -664,25 +880,34 @@ export const BlogPreviewer: React.FC<Props> = ({
           >
             <button
               type="button"
-              onClick={() => handleToggleClick(block.id)}
-              className="flex w-full items-center justify-between gap-4 bg-muted/40 px-4 py-3 text-left font-semibold text-foreground transition-colors hover:bg-muted/60"
+              aria-expanded={isOpen}
+              onClick={() => handleToggleClick(toggleId)}
+              className="flex w-full items-center justify-between gap-4 bg-muted/40 px-4 py-3.5 text-left font-semibold text-foreground transition-colors hover:bg-muted/60"
             >
               <span>{block.data.text}</span>
-
-              <span
-                className={[
-                  "shrink-0 transition-transform duration-200",
-                  isOpen ? "rotate-0" : "-rotate-90",
-                ].join(" ")}
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
                 aria-hidden="true"
+                className={[
+                  "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                  isOpen ? "rotate-180" : "rotate-0",
+                ].join(" ")}
               >
-                ▼
-              </span>
+                <path
+                  d="m6 9 6 6 6-6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </button>
 
             {isOpen && block.data.itemsContent && (
               <div
                 className="px-4 py-4 text-foreground"
+                style={readableText}
                 dangerouslySetInnerHTML={renderHTML(block.data.itemsContent)}
               />
             )}
@@ -690,104 +915,83 @@ export const BlogPreviewer: React.FC<Props> = ({
         );
       }
 
-      /* ===================================================
-         ALERT
-         =================================================== */
-
       case "alert": {
         if (!block.data) return null;
-
         const alertMessage = block.data.message?.trim();
-
         if (!alertMessage) return null;
 
         const alertTitle =
           block.data.title === "Be Attentivte"
             ? "Be Attentive"
             : block.data.title;
-
         const alertType = block.data.type || "warning";
-
         const alertAlign = block.data.align || "left";
 
         return (
           <div
             key={block.id || index}
             className={[
-              "not-prose mb-5 rounded-xl border p-4",
+              "not-prose mb-6 rounded-xl border p-4 sm:p-5",
               alertClasses[alertType] || alertClasses.warning,
               alignClasses[alertAlign],
             ].join(" ")}
+            style={{ hyphens: "none" }}
           >
             {alertTitle && (
               <strong className="mb-1 block font-semibold">
                 {alertTitle}
               </strong>
             )}
-
             <span dangerouslySetInnerHTML={renderHTML(alertMessage)} />
           </div>
         );
       }
 
-      /* ===================================================
-         WARNING
-         =================================================== */
-
       case "warning": {
         if (!block.data) return null;
-
         const alertTitle = block.data.title?.trim() || "Warning";
-
         const alertMessage = block.data.message?.trim();
-
         if (!alertMessage) return null;
 
         return (
           <div
             key={index}
-            className="not-prose mb-5 rounded-xl border border-border bg-muted p-4 text-foreground"
+            className="not-prose mb-6 rounded-xl border border-border bg-muted p-4 text-foreground sm:p-5"
+            style={readableText}
           >
             <strong className="mb-1 block font-semibold">{alertTitle}</strong>
-
             <span>{alertMessage}</span>
           </div>
         );
       }
 
-      /* ===================================================
-         PARAGRAPH
-         =================================================== */
-
       case "paragraph":
       case "aitext": {
         const text = block.data.text?.trim();
-
         if (!text) return null;
 
         return (
           <p
             key={index}
-            className="mb-6 text-lg leading-8 tracking-[-0.01em] text-foreground/90"
+            style={readableText}
+            className="mb-6 text-[1.0625rem] leading-[1.85] tracking-[-0.005em] text-foreground/90 sm:text-lg sm:leading-8"
             dangerouslySetInnerHTML={renderHTML(text)}
           />
         );
       }
 
-      /* ===================================================
-         LINK TOOL
-         =================================================== */
-
       case "linktool": {
         const link = block.data.link;
         const meta = block.data.meta;
-
         if (!link) return null;
 
         return (
-          <div
+          <a
             key={index}
-            className="not-prose my-6 flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-sm"
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="not-prose group my-6 flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
           >
             {meta?.image?.url && (
               <Image
@@ -799,18 +1003,13 @@ export const BlogPreviewer: React.FC<Props> = ({
               />
             )}
 
-            <div className="min-w-0 flex-1">
-              <a
-                href={link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-primary hover:underline"
-              >
+            <div className="min-w-0 flex-1" style={readableText}>
+              <span className="block font-semibold text-primary group-hover:underline">
                 {meta?.title || link}
-              </a>
+              </span>
 
               {meta?.description && (
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
                   {meta.description}
                 </p>
               )}
@@ -819,37 +1018,36 @@ export const BlogPreviewer: React.FC<Props> = ({
                 {link}
               </p>
             </div>
-          </div>
+          </a>
         );
       }
 
-      /* ===================================================
-         ATTACHMENT
-         =================================================== */
-
       case "attaches": {
         const file = block.data.file;
-
         const title = block.data.title || file?.name || "Download";
-
         if (!file?.url) return null;
 
         return (
-          <div key={index} className="not-prose mb-5">
+          <div key={index} className="not-prose mb-6">
             <a
               href={file.url}
               download={title}
-              className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-muted"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-muted"
             >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                <path
+                  d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
               {title}
             </a>
           </div>
         );
       }
-
-      /* ===================================================
-         IMAGE
-         =================================================== */
 
       case "image":
         return (
@@ -860,11 +1058,7 @@ export const BlogPreviewer: React.FC<Props> = ({
           />
         );
 
-      /* ===================================================
-         CODE
-         =================================================== */
-
-      case "code": {
+      case "code":
         return (
           <CodeBlock
             key={index}
@@ -873,58 +1067,57 @@ export const BlogPreviewer: React.FC<Props> = ({
             title={block.data.title || "Code"}
           />
         );
-      }
-
-      /* ===================================================
-         HEADER
-         =================================================== */
 
       case "header": {
         if (!block.data.text) return null;
-
         const level = Math.min(Math.max(block.data.level || 2, 1), 6);
-
-        const id = slugifyHeader(block.data.text);
+        const id = headingIds[index] || slugifyHeader(block.data.text);
 
         const classes =
           level === 1
-            ? "scroll-mt-24 mb-5 mt-12 text-4xl font-bold tracking-tight text-foreground sm:text-5xl"
+            ? "mb-5 mt-14 text-4xl font-bold tracking-tight text-foreground sm:text-5xl"
             : level === 2
-              ? "scroll-mt-24 mb-4 mt-10 text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+              ? "mb-4 mt-12 text-[1.75rem] font-bold leading-tight tracking-tight text-foreground sm:text-4xl"
               : level === 3
-                ? "scroll-mt-24 mb-3 mt-8 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-                : "scroll-mt-24 mb-3 mt-7 text-xl font-semibold tracking-tight text-foreground sm:text-2xl";
+                ? "mb-3 mt-9 text-2xl font-bold leading-snug tracking-tight text-foreground sm:text-3xl"
+                : "mb-3 mt-8 text-xl font-semibold tracking-tight text-foreground sm:text-2xl";
 
         const Tag = `h${level}` as keyof React.JSX.IntrinsicElements;
 
         return (
-          <Tag key={index} id={id} className={classes}>
+          <Tag
+            key={index}
+            id={id}
+            style={{ scrollMarginTop: stickyOffset + 16, ...readableText }}
+            className={`group relative ${classes}`}
+          >
             {block.data.text}
+            <a
+              href={`#${id}`}
+              aria-label="Link to this section"
+              className="ml-2 hidden text-muted-foreground/40 no-underline opacity-0 transition-opacity hover:text-primary group-hover:opacity-100 lg:inline"
+            >
+              #
+            </a>
           </Tag>
         );
       }
 
-      /* ===================================================
-         LIST
-         =================================================== */
-
       case "list": {
-        if (!block.data.items?.length) {
-          return null;
-        }
+        if (!block.data.items?.length) return null;
 
         const ListTag = block.data.style === "ordered" ? "ol" : "ul";
-
         const listClass =
           block.data.style === "ordered"
-            ? "mb-6 list-inside list-decimal space-y-2 text-lg leading-8"
-            : "mb-6 list-inside list-disc space-y-2 text-lg leading-8";
+            ? "mb-6 list-outside list-decimal space-y-2.5 pl-6 text-[1.0625rem] leading-8 marker:font-semibold marker:text-primary sm:text-lg"
+            : "mb-6 list-outside list-disc space-y-2.5 pl-6 text-[1.0625rem] leading-8 marker:text-primary sm:text-lg";
 
         return (
-          <ListTag key={index} className={listClass}>
+          <ListTag key={index} className={listClass} style={readableText}>
             {block.data.items.map((item: any, i: number) => (
               <li
                 key={i}
+                className="pl-1"
                 dangerouslySetInnerHTML={renderHTML(
                   typeof item === "string" ? item : item.content || "",
                 )}
@@ -934,29 +1127,26 @@ export const BlogPreviewer: React.FC<Props> = ({
         );
       }
 
-      /* ===================================================
-         CHECKLIST
-         =================================================== */
-
       case "checklist": {
-        if (!block.data.items?.length) {
-          return null;
-        }
+        if (!block.data.items?.length) return null;
 
         return (
-          <ul key={index} className="not-prose mb-6 space-y-3">
+          <ul
+            key={index}
+            className="not-prose mb-6 space-y-3"
+            style={readableText}
+          >
             {block.data.items.map((item: any, i: number) => (
               <li
                 key={i}
-                className="flex items-center gap-3 text-base leading-7"
+                className="flex items-start gap-3 text-base leading-7"
               >
                 <input
                   type="checkbox"
                   checked={!!item.checked}
                   readOnly
-                  className="h-4 w-4 shrink-0 accent-primary"
+                  className="mt-1.5 h-4 w-4 shrink-0 accent-primary"
                 />
-
                 <span dangerouslySetInnerHTML={renderHTML(item.text || "")} />
               </li>
             ))}
@@ -964,13 +1154,8 @@ export const BlogPreviewer: React.FC<Props> = ({
         );
       }
 
-      /* ===================================================
-         DELIMITER
-         =================================================== */
-
       case "delimiter": {
         const style = block.data?.style || "star";
-
         const delimiterStyles: Record<string, string> = {
           star: "★ ★ ★ ★ ★",
           dash: "— — — — —",
@@ -980,16 +1165,12 @@ export const BlogPreviewer: React.FC<Props> = ({
         return (
           <div
             key={index}
-            className="not-prose my-10 text-center text-sm tracking-[0.35em] text-muted-foreground/60"
+            className="not-prose my-12 text-center text-sm tracking-[0.35em] text-muted-foreground/60"
           >
             {delimiterStyles[style] || delimiterStyles.star}
           </div>
         );
       }
-
-      /* ===================================================
-         RAW HTML
-         =================================================== */
 
       case "raw":
         if (!block.data.html) return null;
@@ -997,14 +1178,10 @@ export const BlogPreviewer: React.FC<Props> = ({
         return (
           <div
             key={index}
-            className="my-8"
+            className="my-8 max-w-full overflow-x-auto"
             dangerouslySetInnerHTML={renderHTML(block.data.html)}
           />
         );
-
-      /* ===================================================
-         QUOTE
-         =================================================== */
 
       case "quote":
         if (!block.data.text) return null;
@@ -1012,42 +1189,48 @@ export const BlogPreviewer: React.FC<Props> = ({
         return (
           <blockquote
             key={index}
-            className="my-8 border-l-4 border-primary bg-muted/30 py-4 pl-5 pr-4 text-lg italic leading-8 text-muted-foreground"
+            style={readableText}
+            className="not-prose relative my-10 overflow-hidden rounded-2xl border border-border bg-muted/30 py-6 pl-7 pr-6 text-lg italic leading-8 text-foreground/80 sm:text-xl"
           >
+            <span
+              aria-hidden="true"
+              className="absolute inset-y-0 left-0 w-1.5 bg-primary"
+            />
             {block.data.text}
-
             {block.data.caption && (
-              <footer className="mt-3 text-sm not-italic text-foreground/70">
+              <footer className="mt-4 text-sm font-medium not-italic text-muted-foreground">
                 — {block.data.caption}
               </footer>
             )}
           </blockquote>
         );
 
-      /* ===================================================
-         TABLE
-         =================================================== */
-
       case "table": {
-        if (!block.data?.content) {
-          return null;
-        }
+        if (!block.data?.content) return null;
 
         return (
           <div
             key={index}
             className="not-prose my-8 overflow-x-auto rounded-xl border border-border shadow-sm"
           >
-            <table className="w-full border-collapse text-left">
+            <table className="w-full min-w-[480px] border-collapse text-left">
               <tbody>
                 {block.data.content.map((row: string[], rowIdx: number) => (
                   <tr
                     key={rowIdx}
-                    className="border-b border-border last:border-b-0"
+                    className={[
+                      "border-b border-border last:border-b-0",
+                      rowIdx === 0 && block.data.withHeadings
+                        ? "bg-muted/50 font-semibold"
+                        : rowIdx % 2 === 1
+                          ? "bg-muted/20"
+                          : "",
+                    ].join(" ")}
                   >
                     {row.map((cell, cellIdx) => (
                       <td
                         key={cellIdx}
+                        style={readableText}
                         className="border-r border-border px-4 py-3 text-sm leading-6 text-foreground last:border-r-0"
                         dangerouslySetInnerHTML={renderHTML(cell)}
                       />
@@ -1060,171 +1243,58 @@ export const BlogPreviewer: React.FC<Props> = ({
         );
       }
 
-      /* ===================================================
-         UNKNOWN BLOCK
-         =================================================== */
-
       default:
         return null;
     }
   };
 
   return (
-    <div className="prose max-w-none px-4 dark:prose-invert lg:px-0">
+    <div className="min-w-0">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-x-0 top-0 z-60 h-[3px]"
+      >
+        <div
+          className="h-full origin-left bg-primary transition-transform duration-100"
+          style={{ transform: `scaleX(${progress})` }}
+        />
+      </div>
+
       <CodeBlockSwitcher />
 
-      {/* =====================================================
-          TABLE OF CONTENTS (STICKY)
-          ===================================================== */}
+      <article
+        data-blog-article
+        className="prose min-w-0 max-w-none px-4 dark:prose-invert lg:px-0"
+      >
+        {content.blocks.map((block: any, index: number) => (
+          <React.Fragment key={index}>
+            {renderBlock(block, index)}
 
-      {validTableOfContents.length > 0 && (
-        <nav
-          data-toc
-          aria-label="Table of contents"
-          className="not-prose sticky top-4 z-30 mx-auto my-8 w-full max-w-3xl sm:my-10"
-        >
-          <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-md backdrop-blur-sm">
-            <button
-              type="button"
-              aria-expanded={isTableOfContentsOpen}
-              aria-controls="blog-table-of-contents"
-              onClick={() => setIsTableOfContentsOpen((previous) => !previous)}
-              className="group flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors duration-200 hover:bg-muted/40 sm:px-6"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-base font-semibold text-foreground">
-                  Table of Contents
-                </span>
+            {index === earlyNativeIndex &&
+              index !== midNativeIndex &&
+              index !== lateNativeIndex &&
+              !adBlockIndexes.has(index) && (
+                <NativeSlot variant={NATIVE_EARLY_VARIANT} />
+              )}
 
-                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {validTableOfContents.length}
-                </span>
+            {index === midNativeIndex &&
+              index !== lateNativeIndex &&
+              !adBlockIndexes.has(index) && (
+                <NativeSlot variant={NATIVE_MID_VARIANT} />
+              )}
 
-                {activeSection && (
-                  <span className="hidden truncate text-xs text-muted-foreground sm:inline">
-                    •{" "}
-                    {
-                      validTableOfContents.find(
-                        (item) => item.id === activeSection,
-                      )?.title
-                    }
-                  </span>
-                )}
-              </div>
+            {index === lateNativeIndex && !adBlockIndexes.has(index) && (
+              <NativeSlot variant={NATIVE_LATE_VARIANT} />
+            )}
 
-              <span
-                className={[
-                  "flex h-8 w-8 shrink-0 items-center justify-center",
-                  "rounded-full bg-muted text-muted-foreground",
-                  "transition-transform duration-300",
-                  isTableOfContentsOpen ? "rotate-180" : "rotate-0",
-                ].join(" ")}
-                aria-hidden="true"
-              >
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                  <path
-                    d="m6 9 6 6 6-6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-            </button>
-
-            <div
-              id="blog-table-of-contents"
-              className={[
-                "grid transition-[grid-template-rows,opacity]",
-                "duration-300 ease-out",
-                isTableOfContentsOpen
-                  ? "grid-rows-[1fr] opacity-100"
-                  : "grid-rows-[0fr] opacity-0",
-              ].join(" ")}
-            >
-              <div className="min-h-0 overflow-hidden">
-                <div className="max-h-[60vh] overflow-y-auto border-t border-border bg-muted/10 px-3 py-3 sm:px-4 sm:py-4">
-                  <div className="space-y-1">
-                    {validTableOfContents.map((item, index) => {
-                      const isActive = activeSection === item.id;
-
-                      return (
-                        <button
-                          key={`${item.id}-${index}`}
-                          type="button"
-                          onClick={(event) =>
-                            handleTableOfContentsClick(event, item.id)
-                          }
-                          aria-current={isActive ? "location" : undefined}
-                          style={{
-                            paddingLeft: `${
-                              Math.max(item.level - 2, 0) * 16 + 12
-                            }px`,
-                          }}
-                          className={[
-                            "group flex min-h-10 w-full items-center",
-                            "rounded-lg border px-3 py-2",
-                            "text-left text-sm leading-6",
-                            "transition-all duration-200",
-
-                            isActive
-                              ? "border-primary/20 bg-primary/10 text-primary"
-                              : "border-transparent text-muted-foreground hover:bg-background hover:text-foreground hover:shadow-sm",
-                          ].join(" ")}
-                        >
-                          <span
-                            className={[
-                              "mr-2.5 h-1.5 w-1.5 shrink-0 rounded-full",
-                              "transition-all duration-200",
-
-                              isActive
-                                ? "bg-primary scale-125"
-                                : "bg-muted-foreground/40 group-hover:bg-primary",
-                            ].join(" ")}
-                          />
-
-                          <span
-                            className={[
-                              "min-w-0 transition-colors",
-                              isActive ? "font-medium" : "",
-                            ].join(" ")}
-                          >
-                            {item.title}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </nav>
-      )}
-
-      {/* =====================================================
-          BLOG CONTENT (+ spaced multi-format ads between blocks)
-          ===================================================== */}
-
-      {content.blocks.map((block: any, index: number) => (
-        <React.Fragment key={index}>
-          {renderBlock(block, index)}
-
-          {adBlockIndexes.has(index) && (
-            <aside
-              aria-label="Advertisement"
-              className="not-prose my-10 flex w-full min-w-0 max-w-full flex-col items-center rounded-2xl border border-border/70 bg-muted/20 px-3 py-4"
-            >
-              <span className="mb-3 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground/60">
-                Advertisement
-              </span>
-
-              <InArticleAd order={adOrder.indexOf(index)} />
-            </aside>
-          )}
-        </React.Fragment>
-      ))}
+            {adBlockIndexes.has(index) && ADS_ENABLED && (
+              <AdFrame label="Advertisement" className="my-10">
+                <InArticleAd order={adOrder.indexOf(index)} />
+              </AdFrame>
+            )}
+          </React.Fragment>
+        ))}
+      </article>
     </div>
   );
 };
