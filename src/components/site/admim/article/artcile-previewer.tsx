@@ -12,14 +12,20 @@ type Props = {
 };
 
 /* =========================================================
-   AD SETTINGS
-   The 300x250 banner appears right after this paragraph number.
-   The ad is only shown if the article has more paragraphs after it,
-   so it never ends up as the last thing in a short article.
+   AD SETTINGS (in-article 300x250 banners)
+
+   - First ad appears after paragraph number AD_FIRST_AFTER_PARAGRAPH
+   - Next ads appear every AD_GAP_PARAGRAPHS paragraphs
+   - Never more than AD_MAX_INLINE ads in one article
+   - Never within AD_MIN_PARAGRAPHS_LEFT paragraphs of the end
+   - Ads only go between two paragraphs (never next to
+     headings, images, code blocks, tables, etc.)
    ========================================================= */
 
-const AD_AFTER_PARAGRAPH = 4;
-const MIN_PARAGRAPHS_AFTER_AD = 2;
+const AD_FIRST_AFTER_PARAGRAPH = 4;
+const AD_GAP_PARAGRAPHS = 5;
+const AD_MAX_INLINE = 3;
+const AD_MIN_PARAGRAPHS_LEFT = 2;
 
 const renderHTML = (html: string | undefined | null) => {
   if (!html || html.trim() === "") return undefined;
@@ -245,6 +251,69 @@ function getTableOfContentsItemData(item: TableOfContentsItem) {
 }
 
 /* =========================================================
+   AD HELPERS
+   ========================================================= */
+
+function isTextParagraph(block: any): boolean {
+  const blockType = block?.type?.toLowerCase();
+
+  return (
+    (blockType === "paragraph" || blockType === "aitext") &&
+    typeof block?.data?.text === "string" &&
+    block.data.text.trim() !== ""
+  );
+}
+
+/**
+ * Returns the set of block indexes AFTER which an ad is rendered.
+ */
+function getAdBlockIndexes(blocks: any[]): Set<number> {
+  const result = new Set<number>();
+
+  const paragraphIndexes: number[] = [];
+
+  blocks.forEach((block, index) => {
+    if (isTextParagraph(block)) paragraphIndexes.push(index);
+  });
+
+  const totalParagraphs = paragraphIndexes.length;
+
+  let lastAdParagraphNumber = 0;
+
+  paragraphIndexes.forEach((blockIndex, position) => {
+    if (result.size >= AD_MAX_INLINE) return;
+
+    const paragraphNumber = position + 1;
+
+    const farEnoughFromStartOrLastAd =
+      result.size === 0
+        ? paragraphNumber >= AD_FIRST_AFTER_PARAGRAPH
+        : paragraphNumber - lastAdParagraphNumber >= AD_GAP_PARAGRAPHS;
+
+    const enoughParagraphsLeft = totalParagraphs - paragraphNumber >= AD_MIN_PARAGRAPHS_LEFT;
+
+    const nextBlockIsParagraph = isTextParagraph(blocks[blockIndex + 1]);
+
+    if (farEnoughFromStartOrLastAd && enoughParagraphsLeft && nextBlockIsParagraph) {
+      result.add(blockIndex);
+      lastAdParagraphNumber = paragraphNumber;
+    }
+  });
+
+  /* Fallback for shorter articles: one ad in the middle */
+  if (result.size === 0 && totalParagraphs >= 4) {
+    const middlePosition = Math.floor(totalParagraphs / 2) - 1;
+    const middleBlockIndex = paragraphIndexes[middlePosition];
+
+    if (middleBlockIndex !== undefined && isTextParagraph(blocks[middleBlockIndex + 1])) {
+      result.add(middleBlockIndex);
+    }
+  }
+
+  return result;
+}
+
+/* =========================================================
    BLOG PREVIEWER
    ========================================================= */
 
@@ -260,6 +329,15 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
   const validTableOfContents = useMemo(() => {
     return tableOfContents.map(getTableOfContentsItemData).filter((item) => item.id && item.title);
   }, [tableOfContents]);
+
+  /* =========================================================
+     AD POSITIONS
+     ========================================================= */
+
+  const adBlockIndexes = useMemo(
+    () => getAdBlockIndexes(Array.isArray(content?.blocks) ? content.blocks : []),
+    [content],
+  );
 
   /* =========================================================
      SMOOTH SCROLL
@@ -428,40 +506,6 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
     center: "text-center",
     right: "text-right",
   };
-
-  /* =========================================================
-     AD POSITION
-     
-     Finds the block index of the Nth paragraph.
-     The ad is rendered right after that block.
-     Returns -1 (no ad) when the article is too short.
-     ========================================================= */
-
-  const adBlockIndex = (() => {
-    let paragraphCount = 0;
-    let foundIndex = -1;
-
-    content.blocks.forEach((block: any, index: number) => {
-      const blockType = block.type?.toLowerCase();
-      const isParagraph =
-        (blockType === "paragraph" || blockType === "aitext") && !!block.data?.text?.trim();
-
-      if (!isParagraph) return;
-
-      paragraphCount += 1;
-
-      if (paragraphCount === AD_AFTER_PARAGRAPH && foundIndex === -1) {
-        foundIndex = index;
-      }
-    });
-
-    const totalParagraphs = paragraphCount;
-
-    if (foundIndex === -1) return -1;
-    if (totalParagraphs - AD_AFTER_PARAGRAPH < MIN_PARAGRAPHS_AFTER_AD) return -1;
-
-    return foundIndex;
-  })();
 
   /* =========================================================
      RENDER ONE BLOCK
@@ -1008,17 +1052,24 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
       )}
 
       {/* =====================================================
-          BLOG CONTENT  (+ 300x250 ad after paragraph N)
+          BLOG CONTENT  (+ spaced 300x250 ads between paragraphs)
           ===================================================== */}
 
       {content.blocks.map((block: any, index: number) => (
         <React.Fragment key={index}>
           {renderBlock(block, index)}
 
-          {index === adBlockIndex && (
-            <div className="not-prose my-8 w-full min-w-0 overflow-hidden">
+          {adBlockIndexes.has(index) && (
+            <aside
+              aria-label="Advertisement"
+              className="not-prose my-10 flex w-full min-w-0 flex-col items-center overflow-hidden"
+            >
+              <span className="mb-2 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground/60">
+                Advertisement
+              </span>
+
               <Banner300x250 />
-            </div>
+            </aside>
           )}
         </React.Fragment>
       ))}

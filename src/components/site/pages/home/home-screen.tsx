@@ -6,11 +6,19 @@
 //
 // Layout (lg):
 //   Row 1 — Hero (left, 8/12) | Trending (right, 4/12)
-//   Row 2 — 3-card grid (left, 8/12) | Newsletter (right, 4/12)
+//   Row 2 — 3-card grid (left, 8/12) | Newsletter + Ad (right, 4/12)
+//   Row 2.5 — Ad: 728x90 banner (md+ only)
 //   Row 3 — Latest Stories (FULL WIDTH)
 //            Featured byline: "Written by [Editor]" + avatar
 //            Every other card: NO author byline
+//   Row 3.5 — Ad: native banner
 //   Row 4 — Editor's Picks (FULL WIDTH)
+//
+// Ads (Adsterra) — kept light so they don't disturb readers:
+//   - 300x250 in the sidebar, under the newsletter box
+//   - 728x90 between the top stories and Latest Stories (md+)
+//   - Native banner between Latest Stories and Editor's Picks
+//   Turn all of them off with ADS_ENABLED in site-ads.tsx
 //
 // Byline rule:
 //   - Only the Latest Stories featured card shows a byline.
@@ -36,6 +44,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { HomeBlogCard } from "@/actions/blog/get-home-blogs";
 import { NewsletterBox } from "./newsletter-box";
+import { ADS_ENABLED, Banner300x250, Banner728x90, NativeAd } from "../../general/ads/site-ads";
+
 
 // ============================================================
 // TYPES
@@ -64,6 +74,37 @@ function getArticleHref(article: HomeBlogCard): string {
   }
 
   return `/${categorySlug}/${article.slug}`;
+}
+
+// ============================================================
+// AD SLOT — labelled, responsive wrapper (hidden when ads are off)
+// Pass the display class yourself: "flex" or "hidden md:flex"
+// ============================================================
+
+function AdSlot({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  if (!ADS_ENABLED) return null;
+
+  return (
+    <aside
+      aria-label="Advertisement"
+      className={cn(
+        "w-full min-w-0 flex-col items-center overflow-hidden",
+        className,
+      )}
+    >
+      <span className="mb-2 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground/60">
+        Advertisement
+      </span>
+
+      {children}
+    </aside>
+  );
 }
 
 // ============================================================
@@ -134,12 +175,31 @@ export function HomeScreen({ blogs }: HomeScreenProps) {
         <aside className="space-y-10 lg:col-span-4">
           {trending.length > 0 && <Trending articles={trending} />}
           <NewsletterBox />
+
+          {/* AD 1 — 300x250 in the sidebar */}
+          <AdSlot className="flex">
+            <Banner300x250 />
+          </AdSlot>
         </aside>
       </div>
+
+      {/* AD 2 — 728x90 banner (tablet / desktop only) */}
+      {latestStories.length > 0 && (
+        <AdSlot className="hidden md:flex">
+          <Banner728x90 />
+        </AdSlot>
+      )}
 
       {/* ROW 3 — Latest Stories */}
       {latestStories.length > 0 && (
         <LatestStories articles={latestStories} />
+      )}
+
+      {/* AD 3 — Native banner */}
+      {latestStories.length > 0 && (
+        <AdSlot className="mx-auto flex max-w-4xl">
+          <NativeAd />
+        </AdSlot>
       )}
 
       {/* ROW 4 — Editor's Picks */}
