@@ -178,24 +178,18 @@ export function NavbarClient({ categories }: NavbarClientProps) {
     <>
       <header
         className={cn(
-          "fixed left-1/2 z-50 -translate-x-1/2 top-4",
-          "w-[calc(100%-2rem)] max-w-[1400px]",
+          "fixed left-0 right-0 z-50 top-4",
+          "w-full",
         )}
       >
-        <div
-          className={cn(
-            "relative overflow-visibles",
-            "",
-            "  ",
-          )}
-        >
-          <div className="relative flex h-14 items-center justify-between gap-2 px-3 sm:px-4">
+        <div className="relative overflow-visible">
+          <div className="relative flex h-14 items-center justify-between gap-2 px-0 sm:px-4">
             {/* ============================================================
                 LEFT — icon trigger + brand
                 ============================================================ */}
             <div
               ref={lineMenuRef}
-              className="relative flex items-center gap-2.5 pl-1"
+              className="relative flex items-center gap-2.5"
             >
               {/* Icon trigger — animated hamburger */}
               <button
@@ -618,10 +612,10 @@ export function NavbarSkeleton() {
     <>
       <div
         aria-hidden
-        className="fixed top-4 left-1/2 z-50 w-[calc(100%-2rem)] max-w-[1400px] -translate-x-1/2"
+        className="fixed top-4 left-0 right-0 z-50 w-full"
       >
-        <div className="flex h-14 items-center justify-between gap-2 rounded-full border border-border/60 bg-background/70 px-3 backdrop-blur-xl sm:px-4">
-          <div className="flex items-center gap-2.5 pl-1">
+        <div className="flex h-14 items-center justify-between gap-2 px-0 sm:px-4">
+          <div className="flex items-center gap-2.5">
             <div className="size-9 rounded-full bg-muted" />
             <div className="h-4 w-20 rounded bg-muted" />
           </div>

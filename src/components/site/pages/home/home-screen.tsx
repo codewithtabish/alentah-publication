@@ -10,6 +10,9 @@
 //   In Latest:      300x250 (v2)
 //   After Latest:   300x250 (v1)
 //   Mobile bottom:  320x50  (v0)
+//
+// NOTE: No horizontal padding here — the parent container
+// already provides it. This component only handles layout.
 // ============================================================
 
 import Image from "next/image";
@@ -130,7 +133,7 @@ export function HomeScreen({ blogs }: HomeScreenProps) {
   const latestStories = rest.slice(3, 11);
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-10 px-4 sm:space-y-12 sm:px-6 lg:space-y-14 lg:px-8">
+    <div className="mx-auto w-full max-w-[1600px] space-y-10 sm:space-y-12 lg:space-y-14">
       {/* ROW 1 + 2 */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-8">
@@ -625,7 +628,7 @@ function Trending({ articles }: { articles: HomeBlogCard[] }) {
 
 export function HomeScreenSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-10 px-4 sm:space-y-12 sm:px-6 lg:space-y-14 lg:px-8">
+    <div className="mx-auto w-full max-w-[1600px] space-y-10 sm:space-y-12 lg:space-y-14">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-8">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] md:gap-7">
