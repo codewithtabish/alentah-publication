@@ -4,11 +4,22 @@ import { TableOfContentsItem } from "@/schemas/blog-schema";
 import Image from "next/image";
 import React, { useEffect, useMemo, useState } from "react";
 import CodeBlockSwitcher from "./code-article-switcher";
+import { Banner300x250 } from "../../general/ads/site-ads";
 
 type Props = {
   content: any;
   tableOfContents?: TableOfContentsItem[];
 };
+
+/* =========================================================
+   AD SETTINGS
+   The 300x250 banner appears right after this paragraph number.
+   The ad is only shown if the article has more paragraphs after it,
+   so it never ends up as the last thing in a short article.
+   ========================================================= */
+
+const AD_AFTER_PARAGRAPH = 4;
+const MIN_PARAGRAPHS_AFTER_AD = 2;
 
 const renderHTML = (html: string | undefined | null) => {
   if (!html || html.trim() === "") return undefined;
@@ -418,6 +429,461 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
     right: "text-right",
   };
 
+  /* =========================================================
+     AD POSITION
+     
+     Finds the block index of the Nth paragraph.
+     The ad is rendered right after that block.
+     Returns -1 (no ad) when the article is too short.
+     ========================================================= */
+
+  const adBlockIndex = (() => {
+    let paragraphCount = 0;
+    let foundIndex = -1;
+
+    content.blocks.forEach((block: any, index: number) => {
+      const blockType = block.type?.toLowerCase();
+      const isParagraph =
+        (blockType === "paragraph" || blockType === "aitext") && !!block.data?.text?.trim();
+
+      if (!isParagraph) return;
+
+      paragraphCount += 1;
+
+      if (paragraphCount === AD_AFTER_PARAGRAPH && foundIndex === -1) {
+        foundIndex = index;
+      }
+    });
+
+    const totalParagraphs = paragraphCount;
+
+    if (foundIndex === -1) return -1;
+    if (totalParagraphs - AD_AFTER_PARAGRAPH < MIN_PARAGRAPHS_AFTER_AD) return -1;
+
+    return foundIndex;
+  })();
+
+  /* =========================================================
+     RENDER ONE BLOCK
+     ========================================================= */
+
+  const renderBlock = (block: any, index: number): React.ReactNode => {
+    const type = block.type?.toLowerCase();
+
+    /* -----------------------------------------------------
+       Ignore TOC blocks coming from editor content
+       ----------------------------------------------------- */
+
+    if (
+      type === "toc" ||
+      type === "tableofcontents" ||
+      type === "table-of-contents" ||
+      type === "table_of_contents"
+    ) {
+      return null;
+    }
+
+    switch (type) {
+      /* ===================================================
+         TOGGLE
+         =================================================== */
+
+      case "toggle": {
+        const isOpen = openToggles[block.id] ?? block.data.status === "open";
+
+        if (!block.data.text && !block.data.itemsContent) {
+          return null;
+        }
+
+        return (
+          <div
+            key={index}
+            className="not-prose mb-5 overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+          >
+            <button
+              type="button"
+              onClick={() => handleToggleClick(block.id)}
+              className="flex w-full items-center justify-between gap-4 bg-muted/40 px-4 py-3 text-left font-semibold text-foreground transition-colors hover:bg-muted/60"
+            >
+              <span>{block.data.text}</span>
+
+              <span
+                className={[
+                  "shrink-0 transition-transform duration-200",
+                  isOpen ? "rotate-0" : "-rotate-90",
+                ].join(" ")}
+                aria-hidden="true"
+              >
+                ▼
+              </span>
+            </button>
+
+            {isOpen && block.data.itemsContent && (
+              <div
+                className="px-4 py-4 text-foreground"
+                dangerouslySetInnerHTML={renderHTML(block.data.itemsContent)}
+              />
+            )}
+          </div>
+        );
+      }
+
+      /* ===================================================
+         ALERT
+         =================================================== */
+
+      case "alert": {
+        if (!block.data) return null;
+
+        const alertMessage = block.data.message?.trim();
+
+        if (!alertMessage) return null;
+
+        const alertTitle = block.data.title === "Be Attentivte" ? "Be Attentive" : block.data.title;
+
+        const alertType = block.data.type || "warning";
+
+        const alertAlign = block.data.align || "left";
+
+        return (
+          <div
+            key={block.id || index}
+            className={[
+              "not-prose mb-5 rounded-xl border p-4",
+              alertClasses[alertType] || alertClasses.warning,
+              alignClasses[alertAlign],
+            ].join(" ")}
+          >
+            {alertTitle && <strong className="mb-1 block font-semibold">{alertTitle}</strong>}
+
+            <span dangerouslySetInnerHTML={renderHTML(alertMessage)} />
+          </div>
+        );
+      }
+
+      /* ===================================================
+         WARNING
+         =================================================== */
+
+      case "warning": {
+        if (!block.data) return null;
+
+        const alertTitle = block.data.title?.trim() || "Warning";
+
+        const alertMessage = block.data.message?.trim();
+
+        if (!alertMessage) return null;
+
+        return (
+          <div
+            key={index}
+            className="not-prose mb-5 rounded-xl border border-border bg-muted p-4 text-foreground"
+          >
+            <strong className="mb-1 block font-semibold">{alertTitle}</strong>
+
+            <span>{alertMessage}</span>
+          </div>
+        );
+      }
+
+      /* ===================================================
+         PARAGRAPH
+         =================================================== */
+
+      case "paragraph":
+      case "aitext": {
+        const text = block.data.text?.trim();
+
+        if (!text) return null;
+
+        return (
+          <p
+            key={index}
+            className="mb-6 text-lg leading-8 tracking-[-0.01em] text-foreground/90"
+            dangerouslySetInnerHTML={renderHTML(text)}
+          />
+        );
+      }
+
+      /* ===================================================
+         LINK TOOL
+         =================================================== */
+
+      case "linktool": {
+        const link = block.data.link;
+        const meta = block.data.meta;
+
+        if (!link) return null;
+
+        return (
+          <div
+            key={index}
+            className="not-prose my-6 flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-sm"
+          >
+            {meta?.image?.url && (
+              <Image
+                src={meta.image.url}
+                alt={meta.title || "Link preview"}
+                width={100}
+                height={100}
+                className="h-20 w-20 shrink-0 rounded-lg object-cover"
+              />
+            )}
+
+            <div className="min-w-0 flex-1">
+              <a
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-primary hover:underline"
+              >
+                {meta?.title || link}
+              </a>
+
+              {meta?.description && (
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">{meta.description}</p>
+              )}
+
+              <p className="mt-1 truncate text-xs text-muted-foreground">{link}</p>
+            </div>
+          </div>
+        );
+      }
+
+      /* ===================================================
+         ATTACHMENT
+         =================================================== */
+
+      case "attaches": {
+        const file = block.data.file;
+
+        const title = block.data.title || file?.name || "Download";
+
+        if (!file?.url) return null;
+
+        return (
+          <div key={index} className="not-prose mb-5">
+            <a
+              href={file.url}
+              download={title}
+              className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-muted"
+            >
+              {title}
+            </a>
+          </div>
+        );
+      }
+
+      /* ===================================================
+         IMAGE
+         =================================================== */
+
+      case "image":
+        return <ImageBlock key={index} file={block.data.file} caption={block.data.caption} />;
+
+      /* ===================================================
+         CODE
+         =================================================== */
+
+      case "code": {
+        return (
+          <CodeBlock
+            key={index}
+            code={block.data.code}
+            language={block.data.language || block.data.lang || "javascript"}
+            title={block.data.title || "Code"}
+          />
+        );
+      }
+
+      /* ===================================================
+         HEADER
+         =================================================== */
+
+      case "header": {
+        if (!block.data.text) return null;
+
+        const level = Math.min(Math.max(block.data.level || 2, 1), 6);
+
+        const id = slugifyHeader(block.data.text);
+
+        const classes =
+          level === 1
+            ? "scroll-mt-24 mb-5 mt-12 text-4xl font-bold tracking-tight text-foreground sm:text-5xl"
+            : level === 2
+              ? "scroll-mt-24 mb-4 mt-10 text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+              : level === 3
+                ? "scroll-mt-24 mb-3 mt-8 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+                : "scroll-mt-24 mb-3 mt-7 text-xl font-semibold tracking-tight text-foreground sm:text-2xl";
+
+        const Tag = `h${level}` as keyof React.JSX.IntrinsicElements;
+
+        return (
+          <Tag key={index} id={id} className={classes}>
+            {block.data.text}
+          </Tag>
+        );
+      }
+
+      /* ===================================================
+         LIST
+         =================================================== */
+
+      case "list": {
+        if (!block.data.items?.length) {
+          return null;
+        }
+
+        const ListTag = block.data.style === "ordered" ? "ol" : "ul";
+
+        const listClass =
+          block.data.style === "ordered"
+            ? "mb-6 list-inside list-decimal space-y-2 text-lg leading-8"
+            : "mb-6 list-inside list-disc space-y-2 text-lg leading-8";
+
+        return (
+          <ListTag key={index} className={listClass}>
+            {block.data.items.map((item: any, i: number) => (
+              <li
+                key={i}
+                dangerouslySetInnerHTML={renderHTML(
+                  typeof item === "string" ? item : item.content || "",
+                )}
+              />
+            ))}
+          </ListTag>
+        );
+      }
+
+      /* ===================================================
+         CHECKLIST
+         =================================================== */
+
+      case "checklist": {
+        if (!block.data.items?.length) {
+          return null;
+        }
+
+        return (
+          <ul key={index} className="not-prose mb-6 space-y-3">
+            {block.data.items.map((item: any, i: number) => (
+              <li key={i} className="flex items-center gap-3 text-base leading-7">
+                <input
+                  type="checkbox"
+                  checked={!!item.checked}
+                  readOnly
+                  className="h-4 w-4 shrink-0 accent-primary"
+                />
+
+                <span dangerouslySetInnerHTML={renderHTML(item.text || "")} />
+              </li>
+            ))}
+          </ul>
+        );
+      }
+
+      /* ===================================================
+         DELIMITER
+         =================================================== */
+
+      case "delimiter": {
+        const style = block.data?.style || "star";
+
+        const delimiterStyles: Record<string, string> = {
+          star: "★ ★ ★ ★ ★",
+          dash: "— — — — —",
+          line: "────────────────",
+        };
+
+        return (
+          <div
+            key={index}
+            className="not-prose my-10 text-center text-sm tracking-[0.35em] text-muted-foreground/60"
+          >
+            {delimiterStyles[style] || delimiterStyles.star}
+          </div>
+        );
+      }
+
+      /* ===================================================
+         RAW HTML
+         =================================================== */
+
+      case "raw":
+        if (!block.data.html) return null;
+
+        return (
+          <div
+            key={index}
+            className="my-8"
+            dangerouslySetInnerHTML={renderHTML(block.data.html)}
+          />
+        );
+
+      /* ===================================================
+         QUOTE
+         =================================================== */
+
+      case "quote":
+        if (!block.data.text) return null;
+
+        return (
+          <blockquote
+            key={index}
+            className="my-8 border-l-4 border-primary bg-muted/30 py-4 pl-5 pr-4 text-lg italic leading-8 text-muted-foreground"
+          >
+            {block.data.text}
+
+            {block.data.caption && (
+              <footer className="mt-3 text-sm not-italic text-foreground/70">
+                — {block.data.caption}
+              </footer>
+            )}
+          </blockquote>
+        );
+
+      /* ===================================================
+         TABLE
+         =================================================== */
+
+      case "table": {
+        if (!block.data?.content) {
+          return null;
+        }
+
+        return (
+          <div
+            key={index}
+            className="not-prose my-8 overflow-x-auto rounded-xl border border-border shadow-sm"
+          >
+            <table className="w-full border-collapse text-left">
+              <tbody>
+                {block.data.content.map((row: string[], rowIdx: number) => (
+                  <tr key={rowIdx} className="border-b border-border last:border-b-0">
+                    {row.map((cell, cellIdx) => (
+                      <td
+                        key={cellIdx}
+                        className="border-r border-border px-4 py-3 text-sm leading-6 text-foreground last:border-r-0"
+                        dangerouslySetInnerHTML={renderHTML(cell)}
+                      />
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+
+      /* ===================================================
+         UNKNOWN BLOCK
+         =================================================== */
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="prose max-w-none dark:prose-invert">
       <CodeBlockSwitcher />
@@ -542,428 +1008,20 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
       )}
 
       {/* =====================================================
-          BLOG CONTENT
+          BLOG CONTENT  (+ 300x250 ad after paragraph N)
           ===================================================== */}
 
-      {content.blocks.map((block: any, index: number) => {
-        const type = block.type?.toLowerCase();
-
-        /* -----------------------------------------------------
-           Ignore TOC blocks coming from editor content
-           ----------------------------------------------------- */
-
-        if (
-          type === "toc" ||
-          type === "tableofcontents" ||
-          type === "table-of-contents" ||
-          type === "table_of_contents"
-        ) {
-          return null;
-        }
-
-        switch (type) {
-          /* ===================================================
-             TOGGLE
-             =================================================== */
-
-          case "toggle": {
-            const isOpen = openToggles[block.id] ?? block.data.status === "open";
-
-            if (!block.data.text && !block.data.itemsContent) {
-              return null;
-            }
-
-            return (
-              <div
-                key={index}
-                className="not-prose mb-5 overflow-hidden rounded-xl border border-border bg-card shadow-sm"
-              >
-                <button
-                  type="button"
-                  onClick={() => handleToggleClick(block.id)}
-                  className="flex w-full items-center justify-between gap-4 bg-muted/40 px-4 py-3 text-left font-semibold text-foreground transition-colors hover:bg-muted/60"
-                >
-                  <span>{block.data.text}</span>
-
-                  <span
-                    className={[
-                      "shrink-0 transition-transform duration-200",
-                      isOpen ? "rotate-0" : "-rotate-90",
-                    ].join(" ")}
-                    aria-hidden="true"
-                  >
-                    ▼
-                  </span>
-                </button>
-
-                {isOpen && block.data.itemsContent && (
-                  <div
-                    className="px-4 py-4 text-foreground"
-                    dangerouslySetInnerHTML={renderHTML(block.data.itemsContent)}
-                  />
-                )}
-              </div>
-            );
-          }
-
-          /* ===================================================
-             ALERT
-             =================================================== */
-
-          case "alert": {
-            if (!block.data) return null;
-
-            const alertMessage = block.data.message?.trim();
-
-            if (!alertMessage) return null;
-
-            const alertTitle =
-              block.data.title === "Be Attentivte" ? "Be Attentive" : block.data.title;
-
-            const alertType = block.data.type || "warning";
-
-            const alertAlign = block.data.align || "left";
-
-            return (
-              <div
-                key={block.id || index}
-                className={[
-                  "not-prose mb-5 rounded-xl border p-4",
-                  alertClasses[alertType] || alertClasses.warning,
-                  alignClasses[alertAlign],
-                ].join(" ")}
-              >
-                {alertTitle && <strong className="mb-1 block font-semibold">{alertTitle}</strong>}
-
-                <span dangerouslySetInnerHTML={renderHTML(alertMessage)} />
-              </div>
-            );
-          }
-
-          /* ===================================================
-             WARNING
-             =================================================== */
-
-          case "warning": {
-            if (!block.data) return null;
-
-            const alertTitle = block.data.title?.trim() || "Warning";
-
-            const alertMessage = block.data.message?.trim();
-
-            if (!alertMessage) return null;
-
-            return (
-              <div
-                key={index}
-                className="not-prose mb-5 rounded-xl border border-border bg-muted p-4 text-foreground"
-              >
-                <strong className="mb-1 block font-semibold">{alertTitle}</strong>
-
-                <span>{alertMessage}</span>
-              </div>
-            );
-          }
-
-          /* ===================================================
-             PARAGRAPH
-             =================================================== */
-
-          case "paragraph":
-          case "aitext": {
-            const text = block.data.text?.trim();
-
-            if (!text) return null;
-
-            return (
-              <p
-                key={index}
-                className="mb-6 text-lg leading-8 tracking-[-0.01em] text-foreground/90"
-                dangerouslySetInnerHTML={renderHTML(text)}
-              />
-            );
-          }
-
-          /* ===================================================
-             LINK TOOL
-             =================================================== */
-
-          case "linktool": {
-            const link = block.data.link;
-            const meta = block.data.meta;
-
-            if (!link) return null;
-
-            return (
-              <div
-                key={index}
-                className="not-prose my-6 flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-sm"
-              >
-                {meta?.image?.url && (
-                  <Image
-                    src={meta.image.url}
-                    alt={meta.title || "Link preview"}
-                    width={100}
-                    height={100}
-                    className="h-20 w-20 shrink-0 rounded-lg object-cover"
-                  />
-                )}
-
-                <div className="min-w-0 flex-1">
-                  <a
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-primary hover:underline"
-                  >
-                    {meta?.title || link}
-                  </a>
-
-                  {meta?.description && (
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                      {meta.description}
-                    </p>
-                  )}
-
-                  <p className="mt-1 truncate text-xs text-muted-foreground">{link}</p>
-                </div>
-              </div>
-            );
-          }
-
-          /* ===================================================
-             ATTACHMENT
-             =================================================== */
-
-          case "attaches": {
-            const file = block.data.file;
-
-            const title = block.data.title || file?.name || "Download";
-
-            if (!file?.url) return null;
-
-            return (
-              <div key={index} className="not-prose mb-5">
-                <a
-                  href={file.url}
-                  download={title}
-                  className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-muted"
-                >
-                  {title}
-                </a>
-              </div>
-            );
-          }
-
-          /* ===================================================
-             IMAGE
-             =================================================== */
-
-          case "image":
-            return <ImageBlock key={index} file={block.data.file} caption={block.data.caption} />;
-
-          /* ===================================================
-             CODE
-             =================================================== */
-
-          case "code": {
-            return (
-              <CodeBlock
-                key={index}
-                code={block.data.code}
-                language={block.data.language || block.data.lang || "javascript"}
-                title={block.data.title || "Code"}
-              />
-            );
-          }
-
-          /* ===================================================
-             HEADER
-             =================================================== */
-
-          case "header": {
-            if (!block.data.text) return null;
-
-            const level = Math.min(Math.max(block.data.level || 2, 1), 6);
-
-            const id = slugifyHeader(block.data.text);
-
-            const classes =
-              level === 1
-                ? "scroll-mt-24 mb-5 mt-12 text-4xl font-bold tracking-tight text-foreground sm:text-5xl"
-                : level === 2
-                  ? "scroll-mt-24 mb-4 mt-10 text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
-                  : level === 3
-                    ? "scroll-mt-24 mb-3 mt-8 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-                    : "scroll-mt-24 mb-3 mt-7 text-xl font-semibold tracking-tight text-foreground sm:text-2xl";
-
-            const Tag = `h${level}` as keyof React.JSX.IntrinsicElements;
-
-            return (
-              <Tag key={index} id={id} className={classes}>
-                {block.data.text}
-              </Tag>
-            );
-          }
-
-          /* ===================================================
-             LIST
-             =================================================== */
-
-          case "list": {
-            if (!block.data.items?.length) {
-              return null;
-            }
-
-            const ListTag = block.data.style === "ordered" ? "ol" : "ul";
-
-            const listClass =
-              block.data.style === "ordered"
-                ? "mb-6 list-inside list-decimal space-y-2 text-lg leading-8"
-                : "mb-6 list-inside list-disc space-y-2 text-lg leading-8";
-
-            return (
-              <ListTag key={index} className={listClass}>
-                {block.data.items.map((item: any, i: number) => (
-                  <li
-                    key={i}
-                    dangerouslySetInnerHTML={renderHTML(
-                      typeof item === "string" ? item : item.content || "",
-                    )}
-                  />
-                ))}
-              </ListTag>
-            );
-          }
-
-          /* ===================================================
-             CHECKLIST
-             =================================================== */
-
-          case "checklist": {
-            if (!block.data.items?.length) {
-              return null;
-            }
-
-            return (
-              <ul key={index} className="not-prose mb-6 space-y-3">
-                {block.data.items.map((item: any, i: number) => (
-                  <li key={i} className="flex items-center gap-3 text-base leading-7">
-                    <input
-                      type="checkbox"
-                      checked={!!item.checked}
-                      readOnly
-                      className="h-4 w-4 shrink-0 accent-primary"
-                    />
-
-                    <span dangerouslySetInnerHTML={renderHTML(item.text || "")} />
-                  </li>
-                ))}
-              </ul>
-            );
-          }
-
-          /* ===================================================
-             DELIMITER
-             =================================================== */
-
-          case "delimiter": {
-            const style = block.data?.style || "star";
-
-            const delimiterStyles: Record<string, string> = {
-              star: "★ ★ ★ ★ ★",
-              dash: "— — — — —",
-              line: "────────────────",
-            };
-
-            return (
-              <div
-                key={index}
-                className="not-prose my-10 text-center text-sm tracking-[0.35em] text-muted-foreground/60"
-              >
-                {delimiterStyles[style] || delimiterStyles.star}
-              </div>
-            );
-          }
-
-          /* ===================================================
-             RAW HTML
-             =================================================== */
-
-          case "raw":
-            if (!block.data.html) return null;
-
-            return (
-              <div
-                key={index}
-                className="my-8"
-                dangerouslySetInnerHTML={renderHTML(block.data.html)}
-              />
-            );
-
-          /* ===================================================
-             QUOTE
-             =================================================== */
-
-          case "quote":
-            if (!block.data.text) return null;
-
-            return (
-              <blockquote
-                key={index}
-                className="my-8 border-l-4 border-primary bg-muted/30 py-4 pl-5 pr-4 text-lg italic leading-8 text-muted-foreground"
-              >
-                {block.data.text}
-
-                {block.data.caption && (
-                  <footer className="mt-3 text-sm not-italic text-foreground/70">
-                    — {block.data.caption}
-                  </footer>
-                )}
-              </blockquote>
-            );
-
-          /* ===================================================
-             TABLE
-             =================================================== */
-
-          case "table": {
-            if (!block.data?.content) {
-              return null;
-            }
-
-            return (
-              <div
-                key={index}
-                className="not-prose my-8 overflow-x-auto rounded-xl border border-border shadow-sm"
-              >
-                <table className="w-full border-collapse text-left">
-                  <tbody>
-                    {block.data.content.map((row: string[], rowIdx: number) => (
-                      <tr key={rowIdx} className="border-b border-border last:border-b-0">
-                        {row.map((cell, cellIdx) => (
-                          <td
-                            key={cellIdx}
-                            className="border-r border-border px-4 py-3 text-sm leading-6 text-foreground last:border-r-0"
-                            dangerouslySetInnerHTML={renderHTML(cell)}
-                          />
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            );
-          }
-
-          /* ===================================================
-             UNKNOWN BLOCK
-             =================================================== */
-
-          default:
-            return null;
-        }
-      })}
+      {content.blocks.map((block: any, index: number) => (
+        <React.Fragment key={index}>
+          {renderBlock(block, index)}
+
+          {index === adBlockIndex && (
+            <div className="not-prose my-8 w-full min-w-0 overflow-hidden">
+              <Banner300x250 />
+            </div>
+          )}
+        </React.Fragment>
+      ))}
     </div>
   );
 };

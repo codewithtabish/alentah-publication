@@ -11,6 +11,11 @@
 //   Mobile  → px-0 (full-bleed, edge-to-edge)
 //   lg+     → px-8 / xl:px-10 (comfortable reading gutters)
 //
+// Ads (Adsterra):
+//   - 728x90 banner  → under the header, md+ only
+//   - 300x250 banner → inside the article (see BlogPreviewer)
+//   - Native banner  → end of the article
+//
 // SEO:
 //   - Rich generateMetadata (title, description, canonical,
 //     robots, OG article, Twitter, keywords, authors)
@@ -33,6 +38,7 @@ import { ArticleTOC } from "@/components/site/pages/article/article-toc";
 import { ArticleCommentsSkeleton } from "@/components/site/admim/article/article-comments-skeleton";
 import { ArticleCommentsServer } from "@/components/site/admim/article/article-comments-server";
 import { ArticleBookmarkServer } from "@/components/site/admim/article/article-bookmark-server";
+import { Banner728x90, NativeAd } from "@/components/site/general/ads/site-ads";
 
 // ============================================================
 // TYPES
@@ -400,6 +406,14 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
       />
 
       {/* =====================================================
+          AD — TOP BANNER 728x90 (tablet / desktop only)
+          Hidden on phones because 728px is wider than the screen.
+      ====================================================== */}
+      <div className="mx-auto w-full min-w-0 max-w-[1440px] px-4 lg:px-8 xl:px-10">
+        <Banner728x90 />
+      </div>
+
+      {/* =====================================================
           READING GRID
             mobile  → 1 column (TOC above body), px-0
             lg+     → [content 1fr] [toc 280px], px-8 / px-10
@@ -423,6 +437,13 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
                 content={blog.content}
                 tableOfContents={undefined}
               />
+
+              {/* =============================================
+                  AD — NATIVE BANNER (end of article)
+              ============================================== */}
+              <div className="mx-auto w-full min-w-0 max-w-full overflow-hidden px-4 lg:px-0">
+                <NativeAd />
+              </div>
 
               {/* =============================================
                   SAVE / BOOKMARK ACTION
