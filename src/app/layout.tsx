@@ -19,9 +19,6 @@ import { ExitIntentPopup } from "@/components/site/general/navbars/exit-intent-p
 // ============================================
 // FONTS
 // ============================================
-// next/font/google self-hosts these fonts at build time,
-// so no external preconnect / dns-prefetch hints are needed
-// for fonts.googleapis.com or fonts.gstatic.com.
 
 const fontSans = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -73,14 +70,8 @@ const ADSENSE_CLIENT = "ca-pub-3242419931272978";
 
 export const viewport: Viewport = {
   themeColor: [
-    {
-      media: "(prefers-color-scheme: light)",
-      color: "#FAF7F2",
-    },
-    {
-      media: "(prefers-color-scheme: dark)",
-      color: "#1A1714",
-    },
+    { media: "(prefers-color-scheme: light)", color: "#FAF7F2" },
+    { media: "(prefers-color-scheme: dark)", color: "#1A1714" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -89,11 +80,10 @@ export const viewport: Viewport = {
 };
 
 // ============================================
-// SEO METADATA — ALENTAH
+// SEO METADATA
 // ============================================
 
 export const metadata: Metadata = {
-  // Resolves every relative URL below into a full https://www.alentah.com/... URL
   metadataBase: new URL(SITE_URL),
 
   title: {
@@ -102,11 +92,8 @@ export const metadata: Metadata = {
   },
 
   description: SITE_DESCRIPTION,
-
   applicationName: SITE_NAME,
-
   generator: "Next.js",
-
   referrer: "origin-when-cross-origin",
 
   keywords: [
@@ -129,28 +116,20 @@ export const metadata: Metadata = {
   creator: "Talha Tabish",
   publisher: SITE_NAME,
 
-  category: undefined,
-
-  // Prevent Safari from auto-linking phone numbers, addresses, emails
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
 
-  // ─── Canonical for the homepage ───
-  alternates: {
-    canonical: "/",
-  },
+  alternates: { canonical: "/" },
 
-  // ─── iOS / PWA ───
   appleWebApp: {
     capable: true,
     title: SITE_NAME,
     statusBarStyle: "default",
   },
 
-  // ─── Open Graph ───
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -169,7 +148,6 @@ export const metadata: Metadata = {
     ],
   },
 
-  // ─── Twitter / X ───
   twitter: {
     card: "summary_large_image",
     site: "@alentah",
@@ -179,7 +157,6 @@ export const metadata: Metadata = {
     images: ["/seo/og-image.png"],
   },
 
-  // ─── Robots ───
   robots: {
     index: true,
     follow: true,
@@ -194,13 +171,6 @@ export const metadata: Metadata = {
     },
   },
 
-  // ─── Google Search Console verification ───
-  // Replace with your actual token from GSC → Settings → Ownership verification
-  // verification: {
-  //   google: "your-google-verification-token",
-  // },
-
-  // ─── Extra meta tags ───
   other: {
     "msapplication-TileColor": "#6B4A2F",
     "msapplication-config": "/browserconfig.xml",
@@ -220,15 +190,8 @@ const organizationJsonLd = {
   url: SITE_URL,
   logo: `${SITE_URL}/seo/icon-512.png`,
   description: SITE_DESCRIPTION,
-  founder: {
-    "@type": "Person",
-    name: "Talha Tabish",
-  },
-  sameAs: [
-    // Add your real social profile URLs here
-    // "https://twitter.com/alentah",
-    // "https://www.linkedin.com/company/alentah",
-  ],
+  founder: { "@type": "Person", name: "Talha Tabish" },
+  sameAs: [],
 };
 
 const websiteJsonLd = {
@@ -270,7 +233,7 @@ const premiumTypography = {
 } as const;
 
 // ============================================
-// CLERK APPEARANCE — ALENTAH
+// CLERK APPEARANCE
 // ============================================
 
 const clerkAppearance = {
@@ -290,12 +253,9 @@ const clerkAppearance = {
     colorWarning: "var(--secondary)",
     colorBorder: "var(--border)",
     colorRing: "var(--ring)",
-
     borderRadius: "1rem",
-
     fontFamily: "var(--font-jakarta), ui-sans-serif, sans-serif",
     fontFamilyButtons: "var(--font-jakarta), ui-sans-serif, sans-serif",
-
     fontSize: "0.875rem",
     spacingUnit: "1rem",
   },
@@ -436,15 +396,18 @@ export default function RootLayout({
       style={premiumTypography}
     >
       <head>
-        {/* Google AdSense — site verification + ads code.
-            Plain <script> (not next/script) so Google can detect it in the HTML <head>. */}
+        {/* Google AdSense — site ownership verification meta tag.
+            Google's verifier checks for this exact tag in the <head>. */}
+        <meta name="google-adsense-account" content={ADSENSE_CLIENT} />
+
+        {/* Google AdSense loader script */}
         <script
           async
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
           crossOrigin="anonymous"
         />
 
-        {/* JSON-LD — Organization + WebSite schema for rich results */}
+        {/* JSON-LD */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -467,9 +430,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ClerkProvider appearance={clerkAppearance}>
-            <main className="flex flex-1 flex-col">
-              {children}
-            </main>
+            <main className="flex flex-1 flex-col">{children}</main>
 
             <ExitIntentPopup />
             <Toaster />
