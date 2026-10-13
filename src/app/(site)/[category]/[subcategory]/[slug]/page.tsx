@@ -5,16 +5,22 @@
 //
 // Layout:
 //   Mobile  → single column, TOC collapses above the article
-//   Desktop → [content 1fr] [TOC 280px]  (TOC on the RIGHT)
+//   Desktop → [content 1fr] [sidebar 280px]  (sidebar on the RIGHT)
 //
 // Padding:
 //   Mobile  → px-0 (full-bleed, edge-to-edge)
 //   lg+     → px-8 / xl:px-10 (comfortable reading gutters)
 //
-// Ads (Adsterra):
-//   - 728x90 banner  → under the header, md+ only
-//   - 300x250 banner → inside the article (see BlogPreviewer)
-//   - Native banner  → end of the article
+// Ads (Adsterra) — no background box, label only:
+//   1. Under the header     → 728x90 (md+) / 300x250 (mobile)
+//   2. Sidebar (lg+)        → TOC, 300x250, 300x250,
+//                             then a sticky 300x250
+//   3. Inside the article   → 300x250 between paragraphs
+//                             (see BlogPreviewer)
+//   4. End of the article   → Native banner
+//   5. Bottom of the page   → mobile: 3 x 300x250 stacked
+//                             md: 728x90 + 2 x 300x250 side by side
+//                             lg+: 728x90 only
 //
 // SEO:
 //   - Rich generateMetadata (title, description, canonical,
@@ -28,6 +34,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
+import { cn } from "@/lib/utils";
 import { getArticleBySlug } from "@/actions/blog/get-article-by-slug";
 
 import type { TableOfContentsItem } from "@/schemas/blog-schema";
@@ -38,7 +45,12 @@ import { ArticleTOC } from "@/components/site/pages/article/article-toc";
 import { ArticleCommentsSkeleton } from "@/components/site/admim/article/article-comments-skeleton";
 import { ArticleCommentsServer } from "@/components/site/admim/article/article-comments-server";
 import { ArticleBookmarkServer } from "@/components/site/admim/article/article-bookmark-server";
-import { Banner728x90, NativeAd } from "@/components/site/general/ads/site-ads";
+import {
+  ADS_ENABLED,
+  Banner300x250,
+  Banner728x90,
+  NativeAd,
+} from "@/components/site/general/ads/site-ads";
 
 // ============================================================
 // TYPES
@@ -61,6 +73,102 @@ const SITE_URL = "https://www.alentah.com";
 const SITE_NAME = "Alentah";
 const PUBLISHER_LOGO = `${SITE_URL}/seo/icon-512.png`;
 const FALLBACK_OG_IMAGE = `${SITE_URL}/seo/og-image.png`;
+
+// ============================================================
+// AD SLOT — no background, no border, label only
+// ============================================================
+
+function AdSlot({
+  children,
+  className,
+  label = "Advertisement",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  label?: string;
+}) {
+  if (!ADS_ENABLED) return null;
+
+  return (
+    <aside
+      aria-label={label}
+      className={cn(
+        "flex w-full min-w-0 max-w-full flex-col items-center overflow-hidden",
+        className,
+      )}
+    >
+      <span className="mb-1.5 text-[9px] font-medium uppercase tracking-[0.22em] text-muted-foreground/60">
+        {label}
+      </span>
+      <div className="flex max-w-full justify-center">{children}</div>
+    </aside>
+  );
+}
+
+// ============================================================
+// SIDEBAR ADS — desktop only (lg+), stacked under the TOC
+//   Two normal ads, then one sticky ad that follows the scroll
+//   and fills the long empty space next to the article.
+// ============================================================
+
+function SidebarAds() {
+  if (!ADS_ENABLED) return null;
+
+  return (
+    <>
+      <AdSlot className="hidden lg:flex">
+        <Banner300x250 />
+      </AdSlot>
+
+      <AdSlot className="hidden lg:flex">
+        <Banner300x250 />
+      </AdSlot>
+
+      {/* Sticky: stays in view while the article scrolls */}
+      <div className="hidden lg:sticky lg:top-24 lg:block">
+        <AdSlot>
+          <Banner300x250 />
+        </AdSlot>
+      </div>
+    </>
+  );
+}
+
+// ============================================================
+// BOTTOM ADS — fills the empty space at the end of the page
+//   mobile → 3 x 300x250 stacked
+//   md     → 728x90, then 2 x 300x250 side by side
+//   lg+    → 728x90 only (the sidebar already has ads)
+// ============================================================
+
+function BottomAds() {
+  if (!ADS_ENABLED) return null;
+
+  return (
+    <div className="mt-10 space-y-8 px-4 sm:mt-12 lg:px-0">
+      {/* 728x90 — md+ */}
+      <AdSlot className="hidden md:flex">
+        <Banner728x90 />
+      </AdSlot>
+
+      {/* Two 300x250 — mobile stacked, md side by side, hidden on lg+ */}
+      <div className="grid grid-cols-1 justify-items-center gap-8 md:grid-cols-2 lg:hidden">
+        <AdSlot>
+          <Banner300x250 />
+        </AdSlot>
+
+        <AdSlot>
+          <Banner300x250 />
+        </AdSlot>
+      </div>
+
+      {/* Third 300x250 — mobile only */}
+      <AdSlot className="md:hidden">
+        <Banner300x250 />
+      </AdSlot>
+    </div>
+  );
+}
 
 // ============================================================
 // HELPERS
@@ -374,7 +482,7 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
   };
 
   return (
-    <main className="w-full min-w-0 px-0">
+    <main className="w-full min-w-0 overflow-x-hidden px-0">
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -406,26 +514,32 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
       />
 
       {/* =====================================================
-          AD — TOP BANNER 728x90 (tablet / desktop only)
-          Hidden on phones because 728px is wider than the screen.
+          AD 1 — UNDER THE HEADER
+            md+     → 728x90
+            mobile  → 300x250
       ====================================================== */}
-      <div className="mx-auto w-full min-w-0 max-w-[1440px] px-4 lg:px-8 xl:px-10">
-        <Banner728x90 />
+      <div className="mx-auto w-full min-w-0 max-w-[1440px] px-4 pt-6 lg:px-8 xl:px-10">
+        <AdSlot className="hidden md:flex">
+          <Banner728x90 />
+        </AdSlot>
+
+        <AdSlot className="md:hidden">
+          <Banner300x250 />
+        </AdSlot>
       </div>
 
       {/* =====================================================
           READING GRID
             mobile  → 1 column (TOC above body), px-0
-            lg+     → [content 1fr] [toc 280px], px-8 / px-10
+            lg+     → [content 1fr] [sidebar 280px], px-8 / px-10
       ====================================================== */}
-      <div className="mx-auto w-full min-w-0 max-w-[1440px] px-0 pb-12 sm:pb-16 lg:px-8 lg:pb-24 xl:px-10">
+      <div className="mx-auto w-full min-w-0 max-w-[1440px] px-0 pb-10 pt-6 sm:pb-12 lg:px-8 lg:pb-16 xl:px-10">
         <div
           className={[
             "grid w-full min-w-0 gap-8 lg:gap-10 xl:gap-14",
             "grid-cols-1",
             "lg:grid-cols-[minmax(0,1fr)_280px]",
             "xl:grid-cols-[minmax(0,1fr)_300px]",
-            "lg:items-start",
           ].join(" ")}
         >
           {/* =================================================
@@ -433,22 +547,25 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
           ================================================= */}
           <div className="order-2 min-w-0 w-full lg:order-1">
             <article className="relative min-w-0 w-full max-w-none">
+              {/* AD 3 — inline 300x250 ads live inside BlogPreviewer */}
               <BlogPreviewer
                 content={blog.content}
                 tableOfContents={undefined}
               />
 
               {/* =============================================
-                  AD — NATIVE BANNER (end of article)
+                  AD 4 — NATIVE BANNER (end of article)
               ============================================== */}
-              <div className="mx-auto w-full min-w-0 max-w-full overflow-hidden px-4 lg:px-0">
-                <NativeAd />
+              <div className="mt-8 px-4 lg:px-0">
+                <AdSlot label="Sponsored" className="overflow-visible">
+                  <NativeAd />
+                </AdSlot>
               </div>
 
               {/* =============================================
                   SAVE / BOOKMARK ACTION
               ============================================== */}
-              <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6 sm:mt-12">
+              <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border px-4 pt-6 sm:mt-12 lg:px-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Enjoyed this story?
                 </p>
@@ -475,15 +592,25 @@ async function ArticleContent({ params }: { params: Promise<PageParams> }) {
           </div>
 
           {/* =================================================
-              TABLE OF CONTENTS
-                mobile → above body (order-1), full-bleed
-                lg+    → sticky right sidebar (order-2)
+              SIDEBAR
+                mobile → TOC above body (order-1), full-bleed
+                lg+    → right column (order-2), full height:
+                         TOC, 300x250, 300x250, sticky 300x250
           ================================================= */}
-          <ArticleTOC
-            items={tocItems}
-            className="order-1 w-full lg:order-2 lg:sticky lg:top-24"
-          />
+          <aside className="order-1 flex w-full min-w-0 flex-col gap-6 lg:order-2 lg:self-stretch">
+            {/* TOC stays sticky at the top on desktop */}
+            <div className="lg:sticky lg:top-24 lg:z-10">
+              <ArticleTOC items={tocItems} className="w-full" />
+            </div>
+
+            <SidebarAds />
+          </aside>
         </div>
+
+        {/* ===================================================
+            AD 5 — BOTTOM OF THE PAGE
+        =================================================== */}
+        <BottomAds />
       </div>
     </main>
   );

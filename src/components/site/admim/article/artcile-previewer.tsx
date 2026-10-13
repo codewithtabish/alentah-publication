@@ -4,7 +4,12 @@ import { TableOfContentsItem } from "@/schemas/blog-schema";
 import Image from "next/image";
 import React, { useEffect, useMemo, useState } from "react";
 import CodeBlockSwitcher from "./code-article-switcher";
-import { Banner300x250 } from "../../general/ads/site-ads";
+import {
+  ADS_ENABLED,
+  Banner300x250,
+  Banner728x90,
+  NativeAd,
+} from "../../general/ads/site-ads";
 
 type Props = {
   content: any;
@@ -12,20 +17,34 @@ type Props = {
 };
 
 /* =========================================================
-   AD SETTINGS (in-article 300x250 banners)
+   AD SETTINGS (in-article ads)
 
-   - First ad appears after paragraph number AD_FIRST_AFTER_PARAGRAPH
-   - Next ads appear every AD_GAP_PARAGRAPHS paragraphs
+   Counted in "renderable content blocks" (paragraphs, lists,
+   images, code, quotes, tables, alerts — but NOT headings,
+   NOT the TOC block itself).
+
+   - First ad appears after content block number AD_FIRST_AFTER
+   - Next ads appear every AD_GAP content blocks
    - Never more than AD_MAX_INLINE ads in one article
-   - Never within AD_MIN_PARAGRAPHS_LEFT paragraphs of the end
-   - Ads only go between two paragraphs (never next to
-     headings, images, code blocks, tables, etc.)
+   - Never directly after a heading (the algorithm simply
+     pushes the ad one block further instead of giving up)
+   - Never as the very last block
+   - Fallback: any article with 2+ renderable blocks gets
+     at least one ad
+   - Ads rotate between 300x250 → native → 728x90 so
+     consecutive ads never look the same
    ========================================================= */
 
-const AD_FIRST_AFTER_PARAGRAPH = 4;
-const AD_GAP_PARAGRAPHS = 5;
-const AD_MAX_INLINE = 3;
-const AD_MIN_PARAGRAPHS_LEFT = 2;
+const AD_FIRST_AFTER = 2;
+const AD_GAP = 3;
+const AD_MAX_INLINE = 5;
+
+const TOC_TYPES = new Set([
+  "toc",
+  "tableofcontents",
+  "table-of-contents",
+  "table_of_contents",
+]);
 
 const renderHTML = (html: string | undefined | null) => {
   if (!html || html.trim() === "") return undefined;
@@ -139,7 +158,9 @@ const CodeBlock: React.FC<{
           <div className="hidden h-4 w-px bg-border sm:block" />
 
           <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-sm font-medium text-foreground">{title}</span>
+            <span className="truncate text-sm font-medium text-foreground">
+              {title}
+            </span>
 
             <span className="hidden rounded-md border border-border bg-muted px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground sm:inline-flex">
               {languageLabel}
@@ -175,7 +196,12 @@ const CodeBlock: React.FC<{
             </>
           ) : (
             <>
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
                 <rect
                   x="9"
                   y="9"
@@ -200,7 +226,10 @@ const CodeBlock: React.FC<{
         </button>
       </div>
 
-      <div data-code-language-content={normalizedLanguage} className="overflow-x-auto">
+      <div
+        data-code-language-content={normalizedLanguage}
+        className="overflow-x-auto"
+      >
         <pre className="m-0 min-w-full bg-transparent px-5 py-6 text-[13px] leading-7 sm:px-6 sm:py-7 sm:text-sm">
           <code className="font-mono text-foreground">{code}</code>
         </pre>
@@ -254,59 +283,122 @@ function getTableOfContentsItemData(item: TableOfContentsItem) {
    AD HELPERS
    ========================================================= */
 
-function isTextParagraph(block: any): boolean {
-  const blockType = block?.type?.toLowerCase();
+function isRenderableBlock(block: any): boolean {
+  if (!block) return false;
 
-  return (
-    (blockType === "paragraph" || blockType === "aitext") &&
-    typeof block?.data?.text === "string" &&
-    block.data.text.trim() !== ""
-  );
+  const type = block.type?.toLowerCase();
+
+  if (!type || TOC_TYPES.has(type)) return false;
+
+  const data = block.data ?? {};
+
+  switch (type) {
+    case "paragraph":
+    case "aitext":
+    case "quote":
+    case "header":
+      return typeof data.text === "string" && data.text.trim() !== "";
+    case "list":
+    case "checklist":
+      return Array.isArray(data.items) && data.items.length > 0;
+    case "image":
+      return Boolean(data.file?.url);
+    case "code":
+      return typeof data.code === "string" && data.code.trim() !== "";
+    case "table":
+      return Array.isArray(data.content) && data.content.length > 0;
+    case "alert":
+    case "warning":
+      return typeof data.message === "string" && data.message.trim() !== "";
+    case "toggle":
+      return Boolean(data.text || data.itemsContent);
+    case "linktool":
+      return Boolean(data.link);
+    case "attaches":
+      return Boolean(data.file?.url);
+    case "raw":
+      return Boolean(data.html);
+    case "delimiter":
+      return true;
+    default:
+      return false;
+  }
 }
 
 /**
  * Returns the set of block indexes AFTER which an ad is rendered.
+ *
+ * Algorithm (fixed):
+ *   1. Walk every renderable block in order.
+ *   2. Place the first ad after AD_FIRST_AFTER renderable blocks.
+ *   3. Place the next ad after AD_GAP more renderable blocks.
+ *   4. Never place directly after a heading — if the next block
+ *      is a heading, skip forward to the block after it.
+ *   5. Never place after the very last renderable block.
+ *   6. Cap at AD_MAX_INLINE.
+ *   7. Fallback: if nothing was placed and the article has ≥2
+ *      renderable blocks, place one after the first block that
+ *      is not a heading.
  */
 function getAdBlockIndexes(blocks: any[]): Set<number> {
   const result = new Set<number>();
 
-  const paragraphIndexes: number[] = [];
+  const renderableIndexes: number[] = [];
 
   blocks.forEach((block, index) => {
-    if (isTextParagraph(block)) paragraphIndexes.push(index);
+    if (isRenderableBlock(block)) renderableIndexes.push(index);
   });
 
-  const totalParagraphs = paragraphIndexes.length;
+  const total = renderableIndexes.length;
 
-  let lastAdParagraphNumber = 0;
+  if (total < 2) return result;
 
-  paragraphIndexes.forEach((blockIndex, position) => {
-    if (result.size >= AD_MAX_INLINE) return;
+  let lastAdNumber = 0;
 
-    const paragraphNumber = position + 1;
+  for (let position = 0; position < renderableIndexes.length; position++) {
+    if (result.size >= AD_MAX_INLINE) break;
 
-    const farEnoughFromStartOrLastAd =
+    const number = position + 1;
+
+    // Never as the very last renderable block
+    if (number >= total) break;
+
+    const blockIndex = renderableIndexes[position];
+    const blockType = blocks[blockIndex]?.type?.toLowerCase();
+
+    // Don't place an ad right after a heading — try the next block
+    if (blockType === "header") continue;
+
+    // Also don't place an ad where the *next* renderable block is
+    // a heading (would be an orphan heading under an ad).
+    const nextBlockIndex = renderableIndexes[position + 1];
+    const nextBlockType =
+      nextBlockIndex !== undefined
+        ? blocks[nextBlockIndex]?.type?.toLowerCase()
+        : undefined;
+    if (nextBlockType === "header") continue;
+
+    const farEnough =
       result.size === 0
-        ? paragraphNumber >= AD_FIRST_AFTER_PARAGRAPH
-        : paragraphNumber - lastAdParagraphNumber >= AD_GAP_PARAGRAPHS;
+        ? number >= AD_FIRST_AFTER
+        : number - lastAdNumber >= AD_GAP;
 
-    const enoughParagraphsLeft = totalParagraphs - paragraphNumber >= AD_MIN_PARAGRAPHS_LEFT;
-
-    const nextBlockIsParagraph = isTextParagraph(blocks[blockIndex + 1]);
-
-    if (farEnoughFromStartOrLastAd && enoughParagraphsLeft && nextBlockIsParagraph) {
+    if (farEnough) {
       result.add(blockIndex);
-      lastAdParagraphNumber = paragraphNumber;
+      lastAdNumber = number;
     }
-  });
+  }
 
-  /* Fallback for shorter articles: one ad in the middle */
-  if (result.size === 0 && totalParagraphs >= 4) {
-    const middlePosition = Math.floor(totalParagraphs / 2) - 1;
-    const middleBlockIndex = paragraphIndexes[middlePosition];
+  /* Fallback: guarantee at least one ad if the article is long enough */
+  if (result.size === 0) {
+    for (let position = 0; position < renderableIndexes.length - 1; position++) {
+      const blockIndex = renderableIndexes[position];
+      const blockType = blocks[blockIndex]?.type?.toLowerCase();
 
-    if (middleBlockIndex !== undefined && isTextParagraph(blocks[middleBlockIndex + 1])) {
-      result.add(middleBlockIndex);
+      if (blockType !== "header") {
+        result.add(blockIndex);
+        break;
+      }
     }
   }
 
@@ -314,10 +406,58 @@ function getAdBlockIndexes(blocks: any[]): Set<number> {
 }
 
 /* =========================================================
+   IN-ARTICLE AD DISPATCHER
+
+   Rotates formats so consecutive ads never look the same.
+   All three ad components now accept `variant`, so we pass
+   `order` to each one. `order` also drives which Adsterra
+   key gets used (see site-ads.tsx).
+
+   Format cycle:  300x250 → native → 728x90 → repeat
+   ========================================================= */
+
+function InArticleAd({ order }: { order: number }) {
+  if (!ADS_ENABLED) return null;
+
+  const slot = order % 3;
+
+  if (slot === 0) {
+    return (
+      <div className="flex min-h-[250px] w-full items-center justify-center">
+        <Banner300x250 variant={order} />
+      </div>
+    );
+  }
+
+  if (slot === 1) {
+    return (
+      <div className="flex min-h-[180px] w-full items-center justify-center">
+        <NativeAd variant={order} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-[90px] w-full items-center justify-center">
+      <div className="hidden md:block">
+        <Banner728x90 variant={order} />
+      </div>
+      {/* Mobile fallback: 300x250 instead of 728x90 */}
+      <div className="md:hidden">
+        <Banner300x250 variant={order} />
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
    BLOG PREVIEWER
    ========================================================= */
 
-export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }) => {
+export const BlogPreviewer: React.FC<Props> = ({
+  content,
+  tableOfContents = [],
+}) => {
   const [openToggles, setOpenToggles] = useState<Record<string, boolean>>({});
   const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("");
@@ -327,7 +467,9 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
      ========================================================= */
 
   const validTableOfContents = useMemo(() => {
-    return tableOfContents.map(getTableOfContentsItemData).filter((item) => item.id && item.title);
+    return tableOfContents
+      .map(getTableOfContentsItemData)
+      .filter((item) => item.id && item.title);
   }, [tableOfContents]);
 
   /* =========================================================
@@ -335,8 +477,15 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
      ========================================================= */
 
   const adBlockIndexes = useMemo(
-    () => getAdBlockIndexes(Array.isArray(content?.blocks) ? content.blocks : []),
+    () =>
+      getAdBlockIndexes(Array.isArray(content?.blocks) ? content.blocks : []),
     [content],
+  );
+
+  /* Sorted positions → used to give each ad its own slot index */
+  const adOrder = useMemo(
+    () => Array.from(adBlockIndexes).sort((a, b) => a - b),
+    [adBlockIndexes],
   );
 
   /* =========================================================
@@ -359,9 +508,6 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
 
   /* =========================================================
      ACTIVE SECTION OBSERVER
-     
-     Watches headings while user scrolls.
-     The TOC updates automatically.
      ========================================================= */
 
   useEffect(() => {
@@ -419,35 +565,22 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
 
   /* =========================================================
      TOC CLICK
-     
-     IMPORTANT:
-     We do NOT use href="#id".
-     This prevents the browser's native anchor jump.
      ========================================================= */
 
-  const handleTableOfContentsClick = (event: React.MouseEvent<HTMLButtonElement>, id: string) => {
+  const handleTableOfContentsClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    id: string,
+  ) => {
     event.preventDefault();
 
     const target = document.getElementById(id);
 
     if (!target) return;
 
-    /*
-     * Update active state immediately.
-     */
     setActiveSection(id);
 
-    /*
-     * Collapse the TOC immediately.
-     */
     setIsTableOfContentsOpen(false);
 
-    /*
-     * Scroll manually.
-     *
-     * Because headings have scroll-mt-24,
-     * the sticky/fixed header will not cover them.
-     */
     window.requestAnimationFrame(() => {
       target.scrollIntoView({
         behavior: "smooth",
@@ -485,19 +618,12 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
 
   const alertClasses: Record<string, string> = {
     primary: "border-primary/30 bg-primary/10 text-foreground",
-
     secondary: "border-border bg-muted text-foreground",
-
     info: "border-primary/30 bg-primary/10 text-foreground",
-
     success: "border-primary/30 bg-primary/10 text-foreground",
-
     warning: "border-border bg-muted text-foreground",
-
     danger: "border-destructive/30 bg-destructive/10 text-foreground",
-
     light: "border-border bg-background text-foreground",
-
     dark: "border-border bg-foreground text-background",
   };
 
@@ -514,16 +640,7 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
   const renderBlock = (block: any, index: number): React.ReactNode => {
     const type = block.type?.toLowerCase();
 
-    /* -----------------------------------------------------
-       Ignore TOC blocks coming from editor content
-       ----------------------------------------------------- */
-
-    if (
-      type === "toc" ||
-      type === "tableofcontents" ||
-      type === "table-of-contents" ||
-      type === "table_of_contents"
-    ) {
+    if (TOC_TYPES.has(type)) {
       return null;
     }
 
@@ -533,7 +650,8 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
          =================================================== */
 
       case "toggle": {
-        const isOpen = openToggles[block.id] ?? block.data.status === "open";
+        const isOpen =
+          openToggles[block.id] ?? block.data.status === "open";
 
         if (!block.data.text && !block.data.itemsContent) {
           return null;
@@ -583,7 +701,10 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
 
         if (!alertMessage) return null;
 
-        const alertTitle = block.data.title === "Be Attentivte" ? "Be Attentive" : block.data.title;
+        const alertTitle =
+          block.data.title === "Be Attentivte"
+            ? "Be Attentive"
+            : block.data.title;
 
         const alertType = block.data.type || "warning";
 
@@ -598,7 +719,11 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
               alignClasses[alertAlign],
             ].join(" ")}
           >
-            {alertTitle && <strong className="mb-1 block font-semibold">{alertTitle}</strong>}
+            {alertTitle && (
+              <strong className="mb-1 block font-semibold">
+                {alertTitle}
+              </strong>
+            )}
 
             <span dangerouslySetInnerHTML={renderHTML(alertMessage)} />
           </div>
@@ -685,10 +810,14 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
               </a>
 
               {meta?.description && (
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">{meta.description}</p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {meta.description}
+                </p>
               )}
 
-              <p className="mt-1 truncate text-xs text-muted-foreground">{link}</p>
+              <p className="mt-1 truncate text-xs text-muted-foreground">
+                {link}
+              </p>
             </div>
           </div>
         );
@@ -723,7 +852,13 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
          =================================================== */
 
       case "image":
-        return <ImageBlock key={index} file={block.data.file} caption={block.data.caption} />;
+        return (
+          <ImageBlock
+            key={index}
+            file={block.data.file}
+            caption={block.data.caption}
+          />
+        );
 
       /* ===================================================
          CODE
@@ -811,7 +946,10 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
         return (
           <ul key={index} className="not-prose mb-6 space-y-3">
             {block.data.items.map((item: any, i: number) => (
-              <li key={i} className="flex items-center gap-3 text-base leading-7">
+              <li
+                key={i}
+                className="flex items-center gap-3 text-base leading-7"
+              >
                 <input
                   type="checkbox"
                   checked={!!item.checked}
@@ -903,7 +1041,10 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
             <table className="w-full border-collapse text-left">
               <tbody>
                 {block.data.content.map((row: string[], rowIdx: number) => (
-                  <tr key={rowIdx} className="border-b border-border last:border-b-0">
+                  <tr
+                    key={rowIdx}
+                    className="border-b border-border last:border-b-0"
+                  >
                     {row.map((cell, cellIdx) => (
                       <td
                         key={cellIdx}
@@ -929,7 +1070,7 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
   };
 
   return (
-    <div className="prose max-w-none dark:prose-invert">
+    <div className="prose max-w-none px-4 dark:prose-invert lg:px-0">
       <CodeBlockSwitcher />
 
       {/* =====================================================
@@ -943,7 +1084,6 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
           className="not-prose sticky top-4 z-30 mx-auto my-8 w-full max-w-3xl sm:my-10"
         >
           <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-md backdrop-blur-sm">
-            {/* Header */}
             <button
               type="button"
               aria-expanded={isTableOfContentsOpen}
@@ -952,7 +1092,9 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
               className="group flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors duration-200 hover:bg-muted/40 sm:px-6"
             >
               <div className="flex items-center gap-3">
-                <span className="text-base font-semibold text-foreground">Table of Contents</span>
+                <span className="text-base font-semibold text-foreground">
+                  Table of Contents
+                </span>
 
                 <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   {validTableOfContents.length}
@@ -960,7 +1102,12 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
 
                 {activeSection && (
                   <span className="hidden truncate text-xs text-muted-foreground sm:inline">
-                    • {validTableOfContents.find((item) => item.id === activeSection)?.title}
+                    •{" "}
+                    {
+                      validTableOfContents.find(
+                        (item) => item.id === activeSection,
+                      )?.title
+                    }
                   </span>
                 )}
               </div>
@@ -986,13 +1133,14 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
               </span>
             </button>
 
-            {/* Collapsible list */}
             <div
               id="blog-table-of-contents"
               className={[
                 "grid transition-[grid-template-rows,opacity]",
                 "duration-300 ease-out",
-                isTableOfContentsOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+                isTableOfContentsOpen
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0",
               ].join(" ")}
             >
               <div className="min-h-0 overflow-hidden">
@@ -1005,10 +1153,14 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
                         <button
                           key={`${item.id}-${index}`}
                           type="button"
-                          onClick={(event) => handleTableOfContentsClick(event, item.id)}
+                          onClick={(event) =>
+                            handleTableOfContentsClick(event, item.id)
+                          }
                           aria-current={isActive ? "location" : undefined}
                           style={{
-                            paddingLeft: `${Math.max(item.level - 2, 0) * 16 + 12}px`,
+                            paddingLeft: `${
+                              Math.max(item.level - 2, 0) * 16 + 12
+                            }px`,
                           }}
                           className={[
                             "group flex min-h-10 w-full items-center",
@@ -1052,7 +1204,7 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
       )}
 
       {/* =====================================================
-          BLOG CONTENT  (+ spaced 300x250 ads between paragraphs)
+          BLOG CONTENT (+ spaced multi-format ads between blocks)
           ===================================================== */}
 
       {content.blocks.map((block: any, index: number) => (
@@ -1062,13 +1214,13 @@ export const BlogPreviewer: React.FC<Props> = ({ content, tableOfContents = [] }
           {adBlockIndexes.has(index) && (
             <aside
               aria-label="Advertisement"
-              className="not-prose my-10 flex w-full min-w-0 flex-col items-center overflow-hidden"
+              className="not-prose my-10 flex w-full min-w-0 max-w-full flex-col items-center rounded-2xl border border-border/70 bg-muted/20 px-3 py-4"
             >
-              <span className="mb-2 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground/60">
+              <span className="mb-3 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground/60">
                 Advertisement
               </span>
 
-              <Banner300x250 />
+              <InArticleAd order={adOrder.indexOf(index)} />
             </aside>
           )}
         </React.Fragment>
