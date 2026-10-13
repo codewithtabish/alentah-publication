@@ -2,27 +2,17 @@
 
 // ============================================================
 // HomeScreen — ALENTAH
-// Editorial homepage matching the Meridian mockup.
 //
 // Layout (lg):
-//   Row 1 — Hero (left, 8/12) | Trending + Newsletter + Ad (right, 4/12)
-//   Row 2 — 3-card grid (left, 8/12) + 728x90 banner under it
-//   Row 3 — Full-width 728x90 banner
-//   Row 4 — Latest Stories (full width, featured byline = category editor)
-//   Row 5 — Native ad
-//   Row 6 — Editor's Picks (with a native ad slot inside)
+//   Row 1 — Hero (8/12) | Trending + Newsletter + 300x250 (4/12)
+//   Row 2 — 3-card grid (8/12) + native ad under it
+//   Row 3 — Full-width 728x90 (md+)
+//   Row 4 — Latest Stories (full width, featured byline = editor)
+//   Row 5 — Native ad after Latest Stories
+//   Row 6 — Editor's Picks
 //
-// Adsterra slots (6 total) — all guarded by ADS_ENABLED:
-//   1. 300x250  — sidebar, under newsletter
-//   2. 728x90   — under the 3-card row (md+)
-//   3. 728x90   — full-width, before Latest Stories (md+)
-//   4. 300x250  — between compact rows of Latest Stories
-//   5. native   — after Latest Stories
-//   6. native   — inside Editor's Picks after item 2
-//
-// Performance:
-//   - Hero + LatestStories featured images use fetchPriority="high".
-//   - Everything else stays lazy (Next.js default).
+// Sidebar is right-aligned inside its 4/12 track so no white
+// gap appears on the right side of the page.
 // ============================================================
 
 import Image from "next/image";
@@ -67,7 +57,8 @@ function getArticleHref(article: HomeBlogCard): string {
 }
 
 // ============================================================
-// AD SLOT — labelled, responsive wrapper (hidden when ads are off)
+// AD SLOT — no background, no border, no padding box
+// (the `framed` prop is kept so existing usages still compile)
 // ============================================================
 
 function AdSlot({
@@ -78,21 +69,19 @@ function AdSlot({
   children: React.ReactNode;
   className?: string;
   label?: string;
+  framed?: boolean;
 }) {
   if (!ADS_ENABLED) return null;
 
   return (
     <aside
       aria-label={label}
-      className={cn(
-        "w-full min-w-0 flex-col items-center overflow-hidden",
-        className,
-      )}
+      className={cn("flex w-full min-w-0 flex-col items-center", className)}
     >
-      <span className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground/60">
+      <span className="mb-1.5 text-[9px] font-medium uppercase tracking-[0.22em] text-muted-foreground/60">
         {label}
       </span>
-      {children}
+      <div className="flex justify-center">{children}</div>
     </aside>
   );
 }
@@ -145,9 +134,9 @@ export function HomeScreen({ blogs }: HomeScreenProps) {
   const latestStories = rest.slice(3, 11);
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-10 sm:space-y-12 lg:space-y-14">
+    <div className="mx-auto w-full max-w-[1600px] space-y-10 px-4 sm:space-y-12 sm:px-6 lg:space-y-14 lg:px-8">
       {/* ROW 1 + 2 */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-8">
           <Hero article={hero} />
 
@@ -161,28 +150,27 @@ export function HomeScreen({ blogs }: HomeScreenProps) {
                 ))}
               </div>
 
-              {/* AD 2 — under the 3-card row (md+) */}
-              <AdSlot className="mt-8 hidden md:flex">
-                <Banner728x90 />
+              <AdSlot className="mt-8" label="Sponsored">
+                <NativeAd />
               </AdSlot>
             </>
           )}
         </div>
 
-        <aside className="space-y-6 lg:col-span-4">
+        {/* SIDEBAR — flush to the right edge of its 4/12 track */}
+        <aside className="flex h-full w-full flex-col gap-4 lg:col-span-4 lg:justify-self-end lg:ml-auto lg:max-w-[420px]">
           {trending.length > 0 && <Trending articles={trending} />}
           <NewsletterBox />
 
-          {/* AD 1 — 300x250 in the sidebar */}
-          <AdSlot className="flex">
+          <AdSlot className="lg:sticky lg:top-24" label="Advertisement">
             <Banner300x250 />
           </AdSlot>
         </aside>
       </div>
 
-      {/* AD 3 — full-width 728x90 before Latest Stories (md+) */}
+      {/* AD — full-width 728x90 before Latest Stories (md+) */}
       {latestStories.length > 0 && (
-        <AdSlot className="hidden md:flex">
+        <AdSlot className="hidden md:flex" label="Advertisement">
           <Banner728x90 />
         </AdSlot>
       )}
@@ -192,9 +180,9 @@ export function HomeScreen({ blogs }: HomeScreenProps) {
         <LatestStories articles={latestStories} />
       )}
 
-      {/* AD 4 — native banner after Latest Stories */}
+      {/* AD — native after Latest Stories */}
       {latestStories.length > 0 && (
-        <AdSlot className="mx-auto flex max-w-4xl">
+        <AdSlot className="mx-auto max-w-4xl" label="Sponsored">
           <NativeAd />
         </AdSlot>
       )}
@@ -208,7 +196,7 @@ export function HomeScreen({ blogs }: HomeScreenProps) {
 }
 
 // ============================================================
-// HERO — no author byline
+// HERO
 // ============================================================
 
 function Hero({ article }: { article: HomeBlogCard }) {
@@ -262,7 +250,7 @@ function Hero({ article }: { article: HomeBlogCard }) {
 }
 
 // ============================================================
-// ARTICLE CARD — 3-column row — no author byline
+// ARTICLE CARD
 // ============================================================
 
 function ArticleCard({ article }: { article: HomeBlogCard }) {
@@ -305,9 +293,7 @@ function ArticleCard({ article }: { article: HomeBlogCard }) {
 }
 
 // ============================================================
-// LATEST STORIES — FULL WIDTH
-// Only the featured story shows a byline: "Written by [Editor]"
-// An inline 300x250 sits between the compact rows (row 3 of 4).
+// LATEST STORIES
 // ============================================================
 
 function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
@@ -322,8 +308,7 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
   const editorName = editor?.name ?? null;
   const editorImage = editor?.imageUrl ?? null;
 
-  // Where to inject the inline ad between compact rows.
-  const INLINE_AD_AFTER = 2; // after the 2nd compact row
+  const INLINE_AD_AFTER = 2;
 
   return (
     <section aria-labelledby="latest-stories-heading" className="w-full">
@@ -349,7 +334,6 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
         </Link>
       </div>
 
-      {/* Featured story */}
       <article className="group grid grid-cols-1 gap-6 pt-6 lg:grid-cols-12 lg:gap-10">
         <Link
           href={featuredHref}
@@ -394,7 +378,6 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
             )}
           </div>
 
-          {/* Written by [Editor] — only here */}
           {editorName && (
             <div className="mt-5 flex items-center gap-3">
               <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-border bg-background">
@@ -426,7 +409,6 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
         </div>
       </article>
 
-      {/* Compact rows — no author byline */}
       {compactRows.length > 0 && (
         <ul className="mt-8 divide-y divide-border border-t border-border">
           {compactRows.map((article, index) => {
@@ -467,9 +449,11 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
                 </Link>
 
                 {showInlineAd && (
-                  <AdSlot className="flex py-5">
-                    <Banner300x250 />
-                  </AdSlot>
+                  <div className="py-5">
+                    <AdSlot framed={false} label="Advertisement">
+                      <Banner300x250 />
+                    </AdSlot>
+                  </div>
                 )}
               </li>
             );
@@ -481,8 +465,7 @@ function LatestStories({ articles }: { articles: HomeBlogCard[] }) {
 }
 
 // ============================================================
-// EDITOR'S PICKS — FULL WIDTH — no author byline
-// A native ad sits after the 2nd item, before "Read More".
+// EDITOR'S PICKS
 // ============================================================
 
 function EditorsPicks({ articles }: { articles: HomeBlogCard[] }) {
@@ -543,9 +526,11 @@ function EditorsPicks({ articles }: { articles: HomeBlogCard[] }) {
                 </Link>
 
                 {showInlineAd && (
-                  <AdSlot className="mx-auto mt-5 flex max-w-3xl" label="Sponsored">
-                    <NativeAd />
-                  </AdSlot>
+                  <div className="mt-5">
+                    <AdSlot className="mx-auto max-w-3xl" label="Sponsored">
+                      <NativeAd />
+                    </AdSlot>
+                  </div>
                 )}
               </li>
             );
@@ -571,14 +556,17 @@ function EditorsPicks({ articles }: { articles: HomeBlogCard[] }) {
 }
 
 // ============================================================
-// TRENDING — text-only rows (no image, no author)
+// TRENDING — consistent rows, titles fill the full sidebar width
+// (text-wrap: wrap overrides any global "balance" on headings,
+//  which was causing titles to break early and leave empty
+//  space on the right)
 // ============================================================
 
 function Trending({ articles }: { articles: HomeBlogCard[] }) {
   return (
     <section
       aria-labelledby="trending-heading"
-      className="border-t-2 border-foreground pt-4"
+      className="w-full border-t-2 border-foreground pt-4"
     >
       <h2
         id="trending-heading"
@@ -587,22 +575,33 @@ function Trending({ articles }: { articles: HomeBlogCard[] }) {
         Trending
       </h2>
 
-      <ol className="mt-5 space-y-4">
+      <ol className="mt-4 w-full">
         {articles.map((article, index) => (
-          <li key={article.id}>
+          <li key={article.id} className="w-full">
             <Link
               href={getArticleHref(article)}
-              className="group grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 border-b border-border pb-4 last:border-b-0 last:pb-0"
+              className={cn(
+                "group grid w-full grid-cols-[2.25rem_minmax(0,1fr)] items-start gap-3",
+                "border-b border-border py-3.5",
+                "first:pt-0 last:border-b-0 last:pb-0",
+              )}
             >
               <span
                 aria-hidden="true"
-                className="mt-0.5 shrink-0 font-serif text-2xl leading-none text-muted-foreground/50 tabular-nums"
+                className="shrink-0 pt-0.5 font-serif text-2xl leading-none text-muted-foreground/50 tabular-nums"
               >
                 {String(index + 1).padStart(2, "0")}
               </span>
 
-              <div className="min-w-0 max-w-[42ch]">
-                <h3 className="font-serif text-[15px] leading-snug tracking-tight text-foreground transition-colors group-hover:text-primary line-clamp-2 sm:text-base">
+              <div className="flex w-full min-w-0 flex-col">
+                <h3
+                  className={cn(
+                    "w-full max-w-none font-serif tracking-tight text-foreground",
+                    "text-[15px] leading-snug sm:text-base",
+                    "text-wrap wrap-break-word",
+                    "line-clamp-2 transition-colors group-hover:text-primary",
+                  )}
+                >
                   {article.title}
                 </h3>
 
@@ -624,8 +623,8 @@ function Trending({ articles }: { articles: HomeBlogCard[] }) {
 
 export function HomeScreenSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-10 sm:space-y-12 lg:space-y-14">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
+    <div className="mx-auto w-full max-w-[1600px] space-y-10 px-4 sm:space-y-12 sm:px-6 lg:space-y-14 lg:px-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-8">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] md:gap-7">
             <div className="aspect-4/3 w-full animate-pulse bg-muted" />
@@ -652,24 +651,26 @@ export function HomeScreenSkeleton() {
           </div>
         </div>
 
-        <aside className="space-y-6 lg:col-span-4">
-          <div className="border-t-2 border-foreground pt-4">
+        <aside className="flex h-full w-full flex-col gap-4 lg:col-span-4 lg:ml-auto lg:max-w-[420px] lg:justify-self-end">
+          <div className="w-full border-t-2 border-foreground pt-4">
             <div className="h-8 w-32 animate-pulse rounded-md bg-muted" />
-            <div className="mt-5 space-y-4">
+            <div className="mt-4 space-y-3.5">
               {[0, 1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
-                  className="grid grid-cols-[auto_1fr] items-start gap-4 border-b border-border pb-4"
+                  className="grid w-full grid-cols-[2.25rem_minmax(0,1fr)] items-start gap-3 border-b border-border pb-3.5"
                 >
                   <div className="h-6 w-6 animate-pulse rounded bg-muted" />
                   <div className="space-y-2">
                     <div className="h-3 w-full animate-pulse rounded-full bg-muted" />
+                    <div className="h-3 w-4/5 animate-pulse rounded-full bg-muted" />
                     <div className="h-2.5 w-20 animate-pulse rounded-full bg-muted/70" />
                   </div>
                 </div>
               ))}
             </div>
           </div>
+          <div className="h-32 w-full animate-pulse rounded-lg bg-muted/40" />
         </aside>
       </div>
 

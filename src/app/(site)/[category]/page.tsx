@@ -3,9 +3,15 @@
 // Category Page — ALENTAH
 // URL: /[category]
 //
-// Renders the category hero, its editor, and the interactive
-// body (subcategory filter + featured article + responsive
-// article grid).
+// Renders the category hero and the interactive body
+// (subcategory filter + featured article + article grid).
+// The "Edited by" card is hidden.
+//
+// Ads (no background box, label only, fully responsive):
+//   0. Hero right side — 300x250 (lg+ only)
+//   1. After hero      — 728x90 (md+) / 300x250 (mobile)
+//   2. After body      — Native "Sponsored"
+//   3. Bottom of page  — 728x90 (md+) / 300x250 (mobile)
 //
 // SEO:
 //   - Rich metadata via generateMetadata (per category)
@@ -22,10 +28,17 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
+import { cn } from "@/lib/utils";
 import { CategoryHero } from "@/components/site/pages/category/category-hero";
 import { CategoryBody } from "@/components/site/pages/category/category-body";
 import { CategoryPageSkeleton } from "@/components/site/pages/category/category-skeleton";
 import { getCategoryBySlug } from "@/actions/category/get-category-by-slug";
+import {
+  ADS_ENABLED,
+  Banner300x250,
+  Banner728x90,
+  NativeAd,
+} from "@/components/site/general/ads/site-ads";
 
 // ============================================================
 // TYPES
@@ -44,6 +57,62 @@ type PageProps = {
 // ============================================================
 
 const SITE_URL = "https://www.alentah.com";
+
+// ============================================================
+// AD SLOT — no background, no border, label only
+// ============================================================
+
+function AdSlot({
+  children,
+  className,
+  label = "Advertisement",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  label?: string;
+}) {
+  if (!ADS_ENABLED) return null;
+
+  return (
+    <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8">
+      <aside
+        aria-label={label}
+        className={cn("flex w-full min-w-0 flex-col items-center", className)}
+      >
+        <span className="mb-1.5 text-[9px] font-medium uppercase tracking-[0.22em] text-muted-foreground/60">
+          {label}
+        </span>
+        <div className="flex max-w-full justify-center overflow-hidden">
+          {children}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+// ============================================================
+// HERO AD — sits on the empty right side of the hero (lg+)
+// ============================================================
+
+function HeroAd() {
+  if (!ADS_ENABLED) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 hidden lg:block">
+      <div className="mx-auto flex h-full w-full max-w-[1600px] items-center justify-end px-8">
+        <aside
+          aria-label="Advertisement"
+          className="pointer-events-auto flex flex-col items-center"
+        >
+          <span className="mb-1.5 text-[9px] font-medium uppercase tracking-[0.22em] text-muted-foreground/60">
+            Advertisement
+          </span>
+          <Banner300x250 />
+        </aside>
+      </div>
+    </div>
+  );
+}
 
 // ============================================================
 // METADATA
@@ -238,7 +307,7 @@ async function CategoryContent({
   };
 
   return (
-    <main className="w-full">
+    <main className="w-full space-y-8 overflow-x-hidden sm:space-y-10 lg:space-y-14">
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -253,18 +322,48 @@ async function CategoryContent({
         }}
       />
 
-      <CategoryHero
-        name={cat.name}
-        description={cat.description}
-        blogCount={cat.blogCount}
-        editor={cat.editor}
-      />
+      {/* HERO + AD on the right side (lg+) */}
+      <div className="relative">
+        {/* editor={null} hides the "Edited by" card */}
+        <CategoryHero
+          name={cat.name}
+          description={cat.description}
+          blogCount={cat.blogCount}
+          editor={null}
+        />
+        <HeroAd />
+      </div>
+
+      {/* AD 1 — after hero: 728x90 on md+ */}
+      <AdSlot className="hidden md:flex" label="Advertisement">
+        <Banner728x90 />
+      </AdSlot>
+
+      {/* AD 1 — after hero: 300x250 on mobile */}
+      <AdSlot className="md:hidden" label="Advertisement">
+        <Banner300x250 />
+      </AdSlot>
 
       <CategoryBody
         categorySlug={cat.slug}
         subcategories={cat.subcategories}
         blogs={cat.blogs}
       />
+
+      {/* AD 2 — native after the article grid */}
+      <AdSlot className="mx-auto max-w-4xl" label="Sponsored">
+        <NativeAd />
+      </AdSlot>
+
+      {/* AD 3 — bottom: 728x90 on md+ */}
+      <AdSlot className="hidden md:flex" label="Advertisement">
+        <Banner728x90 />
+      </AdSlot>
+
+      {/* AD 3 — bottom: 300x250 on mobile */}
+      <AdSlot className="pb-4 md:hidden" label="Advertisement">
+        <Banner300x250 />
+      </AdSlot>
     </main>
   );
 }
