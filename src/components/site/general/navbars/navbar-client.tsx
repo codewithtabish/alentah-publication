@@ -2,25 +2,18 @@
 
 // ============================================================
 // Navbar — ALENTAH (Client)
-// Floating editorial masthead. Always visible on scroll.
-// Plain surface, no shadow, no scrolled state changes.
-// Animated hamburger → X icon trigger on the left.
-// HIDDEN on /admin routes.
 //
-// Right-side actions:
-//   - Saved (bookmark icon) → /signed-in only → links to /saved
-//   - ModeToggle (theme)
-//   - Login (signed out) / User menu (signed in)
+// Mobile:
+//   - Brand "ALENTAH" hidden below sm
+//   - Login button hidden below sm
+//   - Small horizontal padding (px-3) on the header
+//   - Icon-only actions remain visible
 // ============================================================
 
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Bookmark,
-  LogOut,
-  User as UserIcon,
-} from "lucide-react";
+import { Bookmark, LogOut, User as UserIcon } from "lucide-react";
 import { SignInButton, useUser, useClerk, Show } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "@/components/site/general/theme/mode-toggle";
@@ -80,7 +73,6 @@ export function NavbarClient({ categories }: NavbarClientProps) {
 
   const isSavedRoute = pathname === "/saved";
 
-  // Show only active categories + active subs
   const visibleCategories = React.useMemo(
     () =>
       categories
@@ -92,17 +84,11 @@ export function NavbarClient({ categories }: NavbarClientProps) {
     [categories],
   );
 
-  // ---------------------------------------------------------
-  // Close menus on route change
-  // ---------------------------------------------------------
   React.useEffect(() => {
     setMenuOpen(false);
     setUserMenuOpen(false);
   }, [pathname]);
 
-  // ---------------------------------------------------------
-  // Close line menu on outside click
-  // ---------------------------------------------------------
   React.useEffect(() => {
     if (!menuOpen) return;
 
@@ -121,9 +107,6 @@ export function NavbarClient({ categories }: NavbarClientProps) {
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [menuOpen]);
 
-  // ---------------------------------------------------------
-  // Close line menu on Escape
-  // ---------------------------------------------------------
   React.useEffect(() => {
     if (!menuOpen) return;
 
@@ -135,9 +118,6 @@ export function NavbarClient({ categories }: NavbarClientProps) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [menuOpen]);
 
-  // ---------------------------------------------------------
-  // Close user menu on outside click
-  // ---------------------------------------------------------
   React.useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (
@@ -153,9 +133,6 @@ export function NavbarClient({ categories }: NavbarClientProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [userMenuOpen]);
 
-  // ---------------------------------------------------------
-  // Lock body scroll while the panel is open on small screens
-  // ---------------------------------------------------------
   React.useEffect(() => {
     const isSmall =
       typeof window !== "undefined" &&
@@ -167,23 +144,15 @@ export function NavbarClient({ categories }: NavbarClientProps) {
     };
   }, [menuOpen]);
 
-  // ---------------------------------------------------------
-  // Admin route → no navbar
-  // ---------------------------------------------------------
   if (isAdminRoute) {
     return null;
   }
 
   return (
     <>
-      <header
-        className={cn(
-          "fixed left-0 right-0 z-50 top-4",
-          "w-full",
-        )}
-      >
+      <header className="fixed left-0 right-0 top-4 z-50 w-full">
         <div className="relative overflow-visible">
-          <div className="relative flex h-14 items-center justify-between gap-2 px-0 sm:px-4">
+          <div className="relative flex h-14 items-center justify-between gap-2 px-3 sm:px-4">
             {/* ============================================================
                 LEFT — icon trigger + brand
                 ============================================================ */}
@@ -191,7 +160,7 @@ export function NavbarClient({ categories }: NavbarClientProps) {
               ref={lineMenuRef}
               className="relative flex items-center gap-2.5"
             >
-              {/* Icon trigger — animated hamburger */}
+              {/* Animated hamburger → X */}
               <button
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}
@@ -213,7 +182,6 @@ export function NavbarClient({ categories }: NavbarClientProps) {
                   aria-hidden="true"
                   className="relative block h-[14px] w-[18px]"
                 >
-                  {/* Top line */}
                   <span
                     className={cn(
                       "absolute left-0 block h-[1.75px] w-full rounded-full bg-current",
@@ -222,8 +190,6 @@ export function NavbarClient({ categories }: NavbarClientProps) {
                       menuOpen && "top-1/2 -translate-y-1/2 rotate-45",
                     )}
                   />
-
-                  {/* Middle line */}
                   <span
                     className={cn(
                       "absolute top-1/2 block h-[1.75px] rounded-full bg-current",
@@ -234,8 +200,6 @@ export function NavbarClient({ categories }: NavbarClientProps) {
                         : "left-0 w-3/4 opacity-100",
                     )}
                   />
-
-                  {/* Bottom line */}
                   <span
                     className={cn(
                       "absolute left-0 block h-[1.75px] w-full rounded-full bg-current",
@@ -247,11 +211,11 @@ export function NavbarClient({ categories }: NavbarClientProps) {
                 </span>
               </button>
 
-              {/* BRAND — ALENTAH */}
+              {/* BRAND — hidden on small screens */}
               <Link
                 href="/"
                 aria-label="ALENTAH — Home"
-                className="group flex shrink-0 items-baseline gap-1"
+                className="group hidden shrink-0 items-baseline gap-1 sm:flex"
               >
                 <span
                   className={cn(
@@ -296,7 +260,6 @@ export function NavbarClient({ categories }: NavbarClientProps) {
                     "sm:w-xs",
                   )}
                 >
-                  {/* Header */}
                   <div className="border-b border-border/70 px-4 pb-3 pt-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
@@ -309,7 +272,6 @@ export function NavbarClient({ categories }: NavbarClientProps) {
                     </div>
                   </div>
 
-                  {/* Items */}
                   <ul className="max-h-[calc(100vh-14rem)] overflow-y-auto p-2">
                     {visibleCategories.length === 0 ? (
                       <li className="px-3 py-3 text-sm text-muted-foreground">
@@ -414,7 +376,7 @@ export function NavbarClient({ categories }: NavbarClientProps) {
                 RIGHT — actions
                 ============================================================ */}
             <div className="flex shrink-0 items-center gap-0.5 sm:gap-1.5">
-              {/* SAVED — bookmark icon, only when signed in */}
+              {/* SAVED */}
               <Show when="signed-in">
                 <Link
                   href="/saved"
@@ -438,6 +400,7 @@ export function NavbarClient({ categories }: NavbarClientProps) {
 
               <ModeToggle />
 
+              {/* LOGIN — hidden on small */}
               <Show when="signed-out">
                 <SignInButton
                   mode="modal"
@@ -447,10 +410,10 @@ export function NavbarClient({ categories }: NavbarClientProps) {
                   <button
                     type="button"
                     className={cn(
-                      "inline-flex h-9 items-center justify-center",
-                      "px-4 sm:px-5 rounded-full",
+                      "hidden sm:inline-flex h-9 items-center justify-center",
+                      "px-5 rounded-full",
                       "border border-primary bg-transparent text-primary",
-                      "text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em]",
+                      "text-[11px] font-semibold uppercase tracking-[0.18em]",
                       "hover:bg-primary hover:text-primary-foreground",
                       "transition-colors duration-200",
                     )}
@@ -460,6 +423,7 @@ export function NavbarClient({ categories }: NavbarClientProps) {
                 </SignInButton>
               </Show>
 
+              {/* USER AVATAR MENU */}
               <Show when="signed-in">
                 <div className="relative" ref={userMenuRef}>
                   <button
@@ -612,17 +576,17 @@ export function NavbarSkeleton() {
     <>
       <div
         aria-hidden
-        className="fixed top-4 left-0 right-0 z-50 w-full"
+        className="fixed left-0 right-0 top-4 z-50 w-full"
       >
-        <div className="flex h-14 items-center justify-between gap-2 px-0 sm:px-4">
+        <div className="flex h-14 items-center justify-between gap-2 px-3 sm:px-4">
           <div className="flex items-center gap-2.5">
             <div className="size-9 rounded-full bg-muted" />
-            <div className="h-4 w-20 rounded bg-muted" />
+            <div className="hidden h-4 w-20 rounded bg-muted sm:block" />
           </div>
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-full bg-muted" />
             <div className="size-8 rounded-full bg-muted" />
-            <div className="h-8 w-16 rounded-full bg-muted" />
+            <div className="hidden h-8 w-16 rounded-full bg-muted sm:block" />
           </div>
         </div>
       </div>
