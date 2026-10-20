@@ -4,27 +4,29 @@
 // Auto-generated at /sitemap.xml by Next.js.
 //
 // Includes:
-//   - Static public pages (/, /about, /careers, /contact, ...)
+//   - Static public pages
 //   - Every active category
 //   - Every published article (with or without subcategory)
 //
 // Excludes:
-//   - /admin (private, noindex)
-//   - /saved (private, noindex)
-//   - /api (not a page)
+//   - /admin, /saved, /profile, /api (private / not pages)
 //   - Draft / scheduled / archived articles
 //   - Inactive categories and subcategories
-//   - Query-param URLs (they canonicalize to base)
 //
-// CRAWL HINTS:
-//   Every page is marked changeFrequency: "daily" so Google
-//   re-checks them at least every 1–2 days. Combined with
-//   publishing 2 articles/day, this keeps the whole site
-//   fresh in Google's index.
+// NOTES:
+//   - Google ignores <changefreq> and <priority>, so they are removed.
+//   - <lastmod> is only set where we have a REAL date. Fake "now"
+//     dates make Google distrust the sitemap.
+//   - If the database fails, we THROW instead of returning a
+//     half-empty sitemap. Next.js then keeps serving the last good
+//     sitemap instead of caching an empty one.
 // ============================================================
 
 import type { MetadataRoute } from "next";
 import prisma from "@/lib/clients/prisma-client";
+
+// Regenerate at most once per hour
+export const revalidate = 3600;
 
 const SITE_URL = "https://www.alentah.com";
 
@@ -54,100 +56,32 @@ function buildArticleUrl(
 // ============================================================
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // -----------------------------------------------------------
-  // 1 — STATIC PUBLIC PAGES
-  // Every static page marked daily so Google re-checks often.
-  // -----------------------------------------------------------
-  const now = new Date();
-
-  const staticRoutes: MetadataRoute.Sitemap = [
-    {
-      url: `${SITE_URL}`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 1.0,
-    },
-    {
-      url: `${SITE_URL}/about`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.7,
-    },
-    {
-      url: `${SITE_URL}/careers`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.6,
-    },
-    {
-      url: `${SITE_URL}/contact`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.6,
-    },
-    {
-      url: `${SITE_URL}/advertise`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.6,
-    },
-    {
-      url: `${SITE_URL}/ethics`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.4,
-    },
-    {
-      url: `${SITE_URL}/privacy`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.3,
-    },
-    {
-      url: `${SITE_URL}/cookies`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.3,
-    },
-    {
-      url: `${SITE_URL}/terms`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.3,
-    },
+  // 1 — STATIC PUBLIC PAGES (no fake lastModified)
+  const staticPaths = [
+    "",
+    "/about",
+    "/careers",
+    "/contact",
+    "/advertise",
+    "/ethics",
+    "/privacy",
+    "/cookies",
+    "/terms",
   ];
 
-  // -----------------------------------------------------------
-  // 2 — CATEGORIES (all active)
-  // -----------------------------------------------------------
-  let categoryRoutes: MetadataRoute.Sitemap = [];
-  let articleRoutes: MetadataRoute.Sitemap = [];
+  const staticRoutes: MetadataRoute.Sitemap = staticPaths.map((path) => ({
+    url: `${SITE_URL}${path}`,
+  }));
 
-  try {
-    const categories = await prisma.category.findMany({
+  // 2 — CATEGORIES + 3 — ARTICLES
+  // No try/catch on purpose: a DB failure must NOT produce an empty sitemap.
+  const [categories, blogs] = await Promise.all([
+    prisma.category.findMany({
       where: { isActive: true },
-      select: {
-        slug: true,
-        updatedAt: true,
-      },
+      select: { slug: true, updatedAt: true },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    });
-
-    categoryRoutes = categories.map((c) => ({
-      url: `${SITE_URL}/${c.slug}`,
-      lastModified: safeDate(c.updatedAt) ?? now,
-      changeFrequency: "daily" as const,
-      priority: 0.8,
-    }));
-  } catch (error) {
-    console.error("[sitemap] Failed to load categories:", error);
-  }
-
-  // -----------------------------------------------------------
-  // 3 — ARTICLES (all PUBLISHED with a real publish date)
-  // -----------------------------------------------------------
-  try {
-    const blogs = await prisma.blog.findMany({
+    }),
+    prisma.blog.findMany({
       where: {
         status: "PUBLISHED",
         publishedAt: { not: null },
@@ -161,30 +95,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         subcategory: { select: { slug: true, isActive: true } },
       },
       orderBy: [{ publishedAt: "desc" }],
+    }),
+  ]);
+
+  const categoryRoutes: MetadataRoute.Sitemap = categories
+    .filter((c) => c.slug)
+    .map((c) => ({
+      url: `${SITE_URL}/${c.slug}`,
+      lastModified: safeDate(c.updatedAt),
+    }));
+
+  const articleRoutes: MetadataRoute.Sitemap = blogs
+    .filter((b) => b.category?.slug && b.slug)
+    .map((b) => {
+      // Only use the subcategory slug if the subcategory is active
+      const subSlug =
+        b.subcategory && b.subcategory.isActive ? b.subcategory.slug : null;
+
+      return {
+        url: buildArticleUrl(b.category.slug, subSlug, b.slug),
+        lastModified: safeDate(b.updatedAt ?? b.publishedAt),
+      };
     });
 
-    articleRoutes = blogs
-      .filter((b) => b.category?.slug && b.slug)
-      .map((b) => {
-        // Only use the subcategory slug if the subcategory is active
-        const subSlug =
-          b.subcategory && b.subcategory.isActive
-            ? b.subcategory.slug
-            : null;
-
-        return {
-          url: buildArticleUrl(b.category.slug, subSlug, b.slug),
-          lastModified: safeDate(b.updatedAt ?? b.publishedAt) ?? now,
-          changeFrequency: "daily" as const,
-          priority: 0.7,
-        };
-      });
-  } catch (error) {
-    console.error("[sitemap] Failed to load articles:", error);
-  }
-
-  // -----------------------------------------------------------
   // 4 — RETURN EVERYTHING
-  // -----------------------------------------------------------
   return [...staticRoutes, ...categoryRoutes, ...articleRoutes];
 }

@@ -15,38 +15,40 @@ import { BackButton } from "@/components/site/general/backs/back-button";
 // ============================================================
 
 const SITE_URL = "https://www.alentah.com";
+const PAGE_URL = `${SITE_URL}/advertise`;
+const ORGANIZATION_ID = `${SITE_URL}/#organization`;
+const WEBSITE_ID = `${SITE_URL}/#website`;
+const OG_IMAGE = `${SITE_URL}/seo/og-image.png`;
 
-const SHORT_DESCRIPTION =
-  "Reach readers who actually read. Editorial partnerships, display placements, and newsletter sponsorships for aligned brands.";
+const TITLE = "Advertise with Alentah | Sponsorships & Partnerships";
+const DESCRIPTION =
+  "Partner with Alentah, an independent publication for curious minds. Labeled sponsored content, newsletter sponsorships and custom research for aligned brands.";
 
 export const metadata: Metadata = {
-  title: "Advertise with Alentah — Reach Curious Minds",
-  description: SHORT_DESCRIPTION,
-  keywords: [
-    "advertise on Alentah",
-    "Alentah advertising",
-    "editorial partnership",
-    "sponsored content",
-    "media kit",
-    "newsletter sponsorship",
-    "custom research",
-    "brand partnership",
-    "long-form publishing",
-    "developer audience",
-    "technology advertising",
-  ],
-  alternates: {
-    canonical: "/advertise",
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: PAGE_URL },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
   openGraph: {
     type: "website",
-    url: "/advertise",
+    url: PAGE_URL,
     siteName: "Alentah",
-    title: "Advertise with Alentah — Reach Curious Minds",
-    description: SHORT_DESCRIPTION,
+    locale: "en_US",
+    title: TITLE,
+    description: DESCRIPTION,
     images: [
       {
-        url: "/seo/og-image.png",
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "Advertise with Alentah",
@@ -55,117 +57,78 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Advertise with Alentah — Reach Curious Minds",
-    description: SHORT_DESCRIPTION,
-    images: ["/seo/og-image.png"],
-  },
-  robots: {
-    index: true,
-    follow: true,
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [OG_IMAGE],
   },
 };
 
 // ============================================================
 // STRUCTURED DATA (JSON-LD)
+// Organization and WebSite are defined once in the root layout;
+// here we only reference them by @id.
 // ============================================================
+
+function jsonLd(data: object): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
+const webPageJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": `${PAGE_URL}#webpage`,
+  url: PAGE_URL,
+  name: TITLE,
+  description: DESCRIPTION,
+  inLanguage: "en",
+  isPartOf: { "@id": WEBSITE_ID },
+  about: { "@id": ORGANIZATION_ID },
+  breadcrumb: { "@id": `${PAGE_URL}#breadcrumb` },
+};
 
 const breadcrumbJsonLd = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
+  "@id": `${PAGE_URL}#breadcrumb`,
   itemListElement: [
-    {
-      "@type": "ListItem",
-      position: 1,
-      name: "Home",
-      item: SITE_URL,
-    },
-    {
-      "@type": "ListItem",
-      position: 2,
-      name: "Advertise",
-      item: `${SITE_URL}/advertise`,
-    },
-  ],
-};
-
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "Do you accept sponsored articles?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes. We partner with brands for long-form, high-quality content that aligns with our editorial standards.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "How many partners do you work with at once?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "We work with a small number of partners so that placements stay rare, considered, and effective.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Can I see anonymized reader data?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes. We can share aggregated, anonymized audience insights upon request.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Do you offer performance-based pricing?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "We don't offer performance-based pricing. Our value is in quality, not volume.",
-      },
-    },
+    { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+    { "@type": "ListItem", position: 2, name: "Advertise", item: PAGE_URL },
   ],
 };
 
 const serviceJsonLd = {
   "@context": "https://schema.org",
   "@type": "Service",
+  "@id": `${PAGE_URL}#service`,
   name: "Alentah Advertising & Partnerships",
-  provider: {
-    "@type": "Organization",
-    name: "Alentah",
-    url: SITE_URL,
-  },
+  provider: { "@id": ORGANIZATION_ID },
   serviceType:
-    "Editorial Partnership, Display Advertising, Newsletter Sponsorship, Custom Research",
+    "Sponsored content, newsletter sponsorship, display advertising, custom research",
   areaServed: "Worldwide",
-  audience: {
-    "@type": "Audience",
-    audienceType: "Brands, technology companies, and research organizations",
-  },
   description:
-    "Long-form editorial partnerships, considered display placements, newsletter sponsorships, and custom research for brands aligned with our editorial standards.",
+    "Clearly labeled editorial partnerships, newsletter sponsorships, display placements and custom research for brands aligned with Alentah's editorial standards.",
+  url: PAGE_URL,
 };
 
 // ============================================================
 // DATA
+// Only claims that are true today. Do not add audience numbers
+// until they come from real analytics.
 // ============================================================
 
-const NUMBERS = [
-  { value: "180K", label: "Monthly readers" },
-  { value: "62%", label: "Senior decision-makers" },
-  { value: "38 min", label: "Average time on page" },
-  { value: "9.4", label: "Average session depth" },
+const FACTS = [
+  { value: "2026", label: "Year founded" },
+  { value: "Independent", label: "Editorial ownership" },
+  { value: "100%", label: "Sponsored content labeled" },
+  { value: "Small", label: "Number of partners at a time" },
 ];
 
 const AUDIENCE = [
   "Artificial intelligence",
-  "Cloud infrastructure",
   "Software engineering",
-  "Product design",
-  "Research and science",
-  "Business and economics",
-  "Cybersecurity",
+  "Technology and business",
+  "Science and research",
+  "Design and culture",
   "Developer tools",
 ];
 
@@ -173,40 +136,40 @@ const FORMATS = [
   {
     number: "01",
     title: "Editorial partnership",
-    body: "Long-form co-produced research or a sponsored series that matches our editorial voice. Marked clearly as partner content.",
+    body: "A co-produced long-form piece or a sponsored series written in our voice and clearly marked as partner content.",
   },
   {
     number: "02",
     title: "Display advertising",
-    body: "Quiet, design-forward placements in articles, newsletters, and section pages. Never intrusive. Never pop-ups.",
+    body: "Quiet, design-forward placements in articles and section pages. Clearly labeled as advertising.",
   },
   {
     number: "03",
     title: "Newsletter sponsorship",
-    body: "A single, considered mention in our weekly newsletter — the most read surface on the site.",
+    body: "A single, considered sponsor mention in the Alentah newsletter, available as the newsletter grows.",
   },
   {
     number: "04",
     title: "Custom research",
-    body: "Original research reports produced with our editorial team and distributed to our audience as a co-branded PDF.",
+    body: "Original research produced with our editorial team and published as a co-branded report.",
   },
 ];
 
 const COMMITMENTS = [
   {
     number: "01",
-    title: "No dark patterns",
-    body: "We don't retarget readers across the web. We don't sell personal data. Ever.",
+    title: "Clear labeling",
+    body: "Sponsored content is always labeled as sponsored. Our writers never present paid pieces as independent editorial.",
   },
   {
     number: "02",
     title: "Editorial independence",
-    body: "Sponsored content is always labeled. Our writers never write paid pieces as if they were editorial.",
+    body: "Partners do not control our newsroom, our coverage or our conclusions. Read our editorial standards on the ethics page.",
   },
   {
     number: "03",
-    title: "Reader-first pricing",
-    body: "We work with a small number of partners so that placements stay rare, considered, and effective.",
+    title: "Honest numbers",
+    body: "We are a new publication and we don't publish audience figures we can't verify. We share real, aggregated analytics on request.",
   },
 ];
 
@@ -214,22 +177,22 @@ const STEPS = [
   {
     number: "01",
     title: "Inquiry",
-    body: "Tell us about your goals and ideal audience.",
+    body: "Tell us about your goals and the audience you want to reach.",
   },
   {
     number: "02",
     title: "Brief",
-    body: "We'll share options and ask a few more questions.",
+    body: "We share the options that fit and ask a few follow-up questions.",
   },
   {
     number: "03",
     title: "Proposal",
-    body: "You'll receive a tailored recommendation and quote.",
+    body: "You receive a tailored recommendation and a quote.",
   },
   {
     number: "04",
     title: "Go live",
-    body: "Once approved, we'll handle production and publication.",
+    body: "Once approved, we handle production and publication.",
   },
 ];
 
@@ -238,25 +201,25 @@ const FAQ = [
     number: "01",
     question: "Do you accept sponsored articles?",
     answer:
-      "Yes. We partner with brands for long-form, high-quality content that aligns with our editorial standards.",
+      "Yes. We partner with a small number of brands on long-form content that fits our editorial standards. Every sponsored piece is clearly labeled.",
   },
   {
     number: "02",
-    question: "How many partners do you work with at once?",
+    question: "Do you already show ads on the site?",
     answer:
-      "We work with a small number of partners so that placements stay rare, considered, and effective.",
+      "Yes. Alentah shows Google AdSense advertising. Direct partnerships are separate from that and are always labeled. See our Privacy and Cookies pages for how advertising partners use data.",
   },
   {
     number: "03",
-    question: "Can I see anonymized reader data?",
+    question: "Can I see reader data?",
     answer:
-      "Yes. We can share aggregated, anonymized audience insights upon request.",
+      "We can share aggregated, anonymized audience insights on request, and we will tell you plainly what we can and can't measure yet.",
   },
   {
     number: "04",
     question: "Do you offer performance-based pricing?",
     answer:
-      "We don't offer performance-based pricing. Our value is in quality, not volume.",
+      "No. We don't sell clicks or guaranteed outcomes. Partnerships are priced on the format and the work involved.",
   },
 ];
 
@@ -267,34 +230,22 @@ const FAQ = [
 export default function AdvertisePage() {
   return (
     <main className="w-full">
-      {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbJsonLd),
-        }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(webPageJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqJsonLd),
-        }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(serviceJsonLd),
-        }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(serviceJsonLd) }}
       />
 
-      {/* =====================================================
-          BACK BUTTON
-          ===================================================== */}
       <BackButton />
 
-      {/* =====================================================
-          HERO
-          ===================================================== */}
+      {/* HERO */}
       <section
         aria-labelledby="advertise-heading"
         className="pt-10 sm:pt-12 lg:pt-14"
@@ -303,21 +254,21 @@ export default function AdvertisePage() {
 
         <div className="pt-14 sm:pt-16 lg:pt-20">
           <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-primary">
-            Advertise with Alentah
+            Partnerships
           </p>
 
           <h1
             id="advertise-heading"
             className="mt-6 max-w-4xl font-serif text-5xl font-bold leading-[1.05] tracking-[-0.03em] text-foreground sm:text-6xl lg:text-7xl xl:text-[5rem]"
           >
-            Reach readers who
-            <br className="hidden sm:block" /> actually read.
+            Advertise with Alentah.
           </h1>
 
           <p className="mt-8 max-w-2xl font-serif text-lg italic leading-relaxed text-muted-foreground sm:text-xl">
-            ALENTAH is a long-form publication for curious minds. Our readers
-            are engineers, founders, designers, and researchers — the people
-            who shape what gets built next.
+            Alentah is an independent publication of slow journalism for
+            curious minds, covering technology, software, AI, science and
+            business. We partner with a small number of brands whose work
+            fits what our readers care about.
           </p>
 
           <div className="mt-6">
@@ -335,36 +286,29 @@ export default function AdvertisePage() {
         </div>
       </section>
 
-      {/* =====================================================
-          NUMBERS
-          ===================================================== */}
-      <section
-        aria-labelledby="numbers-heading"
-        className="mt-20 sm:mt-24"
-      >
-        <h2 id="numbers-heading" className="sr-only">
-          Alentah by the numbers
+      {/* FACTS (all verifiable) */}
+      <section aria-labelledby="facts-heading" className="mt-20 sm:mt-24">
+        <h2 id="facts-heading" className="sr-only">
+          Alentah at a glance
         </h2>
 
         <div aria-hidden="true" className="h-px w-full bg-border" />
 
-        <div className="mt-12 grid grid-cols-2 gap-8 sm:grid-cols-4 sm:gap-6">
-          {NUMBERS.map((stat) => (
-            <div key={stat.label}>
-              <p className="font-serif text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-                {stat.value}
-              </p>
-              <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-                {stat.label}
-              </p>
+        <dl className="mt-12 grid grid-cols-2 gap-8 sm:grid-cols-4 sm:gap-6">
+          {FACTS.map((fact) => (
+            <div key={fact.label}>
+              <dd className="font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                {fact.value}
+              </dd>
+              <dt className="mt-3 text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+                {fact.label}
+              </dt>
             </div>
           ))}
-        </div>
+        </dl>
       </section>
 
-      {/* =====================================================
-          AUDIENCE
-          ===================================================== */}
+      {/* AUDIENCE */}
       <section
         aria-labelledby="audience-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
@@ -372,7 +316,7 @@ export default function AdvertisePage() {
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-6">
             <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-primary">
-              Our audience
+              Our readers
             </p>
 
             <h2
@@ -383,9 +327,18 @@ export default function AdvertisePage() {
             </h2>
 
             <p className="mt-6 max-w-xl text-[15px] leading-7 text-muted-foreground">
-              Our readers come to ALENTAH because they are tired of clickbait.
-              They want to understand the mechanism beneath the announcement.
-              They bookmark what they read and come back to it months later.
+              Alentah is written for people who want to understand the
+              mechanism beneath the announcement: engineers, founders,
+              designers and researchers. We publish fewer, longer stories and
+              would rather earn a reader&rsquo;s attention than chase clicks.
+              Learn more{" "}
+              <Link
+                href="/about"
+                className="underline underline-offset-4 hover:text-primary"
+              >
+                about Alentah
+              </Link>
+              .
             </p>
           </div>
 
@@ -404,9 +357,7 @@ export default function AdvertisePage() {
         </div>
       </section>
 
-      {/* =====================================================
-          FORMATS
-          ===================================================== */}
+      {/* FORMATS */}
       <section
         aria-labelledby="formats-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
@@ -455,9 +406,7 @@ export default function AdvertisePage() {
         <div aria-hidden="true" className="h-px w-full bg-border" />
       </section>
 
-      {/* =====================================================
-          WHAT WE DON'T DO
-          ===================================================== */}
+      {/* WHAT WE DON'T DO */}
       <section
         aria-labelledby="dont-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
@@ -470,16 +419,30 @@ export default function AdvertisePage() {
         </h2>
 
         <p className="mt-6 max-w-3xl text-[16px] leading-7 text-muted-foreground">
-          No pop-ups. No autoplay video. No ad networks that scrape reader
-          data. No sponsored writing that pretends to be editorial.
+          No autoplay video. No sponsored writing that pretends to be
+          editorial. No promises of rankings, traffic or clicks. We don&rsquo;t
+          sell reader data; advertising partners such as Google AdSense work
+          under the rules in our{" "}
+          <Link
+            href="/privacy"
+            className="underline underline-offset-4 hover:text-primary"
+          >
+            Privacy
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/cookies"
+            className="underline underline-offset-4 hover:text-primary"
+          >
+            Cookies
+          </Link>{" "}
+          policies.
         </p>
 
         <div aria-hidden="true" className="mt-10 h-px w-full bg-border" />
       </section>
 
-      {/* =====================================================
-          COMMITMENTS
-          ===================================================== */}
+      {/* COMMITMENTS */}
       <section
         aria-labelledby="commitments-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
@@ -508,11 +471,20 @@ export default function AdvertisePage() {
             </div>
           ))}
         </div>
+
+        <p className="mt-10 text-[14px] leading-7 text-muted-foreground">
+          Read our full{" "}
+          <Link
+            href="/ethics"
+            className="underline underline-offset-4 hover:text-primary"
+          >
+            editorial standards
+          </Link>
+          .
+        </p>
       </section>
 
-      {/* =====================================================
-          HOW IT WORKS
-          ===================================================== */}
+      {/* HOW IT WORKS */}
       <section
         aria-labelledby="how-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
@@ -526,9 +498,9 @@ export default function AdvertisePage() {
 
         <div aria-hidden="true" className="mt-8 h-px w-full bg-border" />
 
-        <div className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+        <ol className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {STEPS.map((step) => (
-            <div key={step.number}>
+            <li key={step.number}>
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary tabular-nums">
                 {step.number}
               </p>
@@ -540,14 +512,12 @@ export default function AdvertisePage() {
               <p className="mt-3 text-[15px] leading-7 text-muted-foreground">
                 {step.body}
               </p>
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </section>
 
-      {/* =====================================================
-          CONTACT CTA
-          ===================================================== */}
+      {/* CONTACT CTA */}
       <section
         aria-labelledby="contact-cta-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
@@ -566,8 +536,8 @@ export default function AdvertisePage() {
             </h2>
 
             <p className="mt-4 max-w-xl text-[14px] leading-7 text-muted-foreground">
-              Full rate card, audience breakdown, and available placements
-              for the next quarter. Reach us on the contact page.
+              Tell us about your brand and goals on the contact page and we
+              will send the available formats, placements and rates.
             </p>
 
             <Link
@@ -580,17 +550,11 @@ export default function AdvertisePage() {
                 aria-hidden="true"
               />
             </Link>
-
-            <p className="mt-4 text-[12px] text-muted-foreground">
-              Response time: under 24 hours.
-            </p>
           </div>
         </div>
       </section>
 
-      {/* =====================================================
-          FAQ
-          ===================================================== */}
+      {/* FAQ (visible content; no FAQ schema, see notes) */}
       <section
         aria-labelledby="faq-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
@@ -626,9 +590,7 @@ export default function AdvertisePage() {
         </ul>
       </section>
 
-      {/* =====================================================
-          CLOSING STRIP
-          ===================================================== */}
+      {/* CLOSING */}
       <section
         aria-labelledby="closing-heading"
         className="mt-24 pb-24 sm:mt-28 sm:pb-28 lg:mt-32 lg:pb-32"
@@ -645,7 +607,7 @@ export default function AdvertisePage() {
           </p>
 
           <p className="mt-8 text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground">
-            — The Editorial Team
+            The Editorial Team
           </p>
         </div>
       </section>

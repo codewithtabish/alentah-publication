@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 
 import {
   Plus_Jakarta_Sans,
@@ -64,6 +65,10 @@ const SITE_DESCRIPTION =
 // Google AdSense publisher ID
 const ADSENSE_CLIENT = "ca-pub-3242419931272978";
 
+// Your real social profile URLs. Fill these in (leave empty until they exist).
+// Example: "https://x.com/alentah", "https://www.linkedin.com/company/alentah"
+const SOCIAL_PROFILES: string[] = [];
+
 // ============================================
 // VIEWPORT
 // ============================================
@@ -81,6 +86,13 @@ export const viewport: Viewport = {
 
 // ============================================
 // SEO METADATA
+// ------------------------------------------------------------
+// IMPORTANT: Do NOT set `alternates.canonical` or `openGraph.url`
+// here. Child pages inherit root metadata, so a canonical of "/"
+// here makes EVERY page claim the homepage as its canonical, and
+// Google drops them as duplicates. Each page (home, category,
+// article, static pages) sets its OWN canonical in its own
+// metadata / generateMetadata.
 // ============================================
 
 export const metadata: Metadata = {
@@ -95,6 +107,7 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   generator: "Next.js",
   referrer: "origin-when-cross-origin",
+  category: "news",
 
   keywords: [
     "Alentah",
@@ -122,8 +135,6 @@ export const metadata: Metadata = {
     telephone: false,
   },
 
-  alternates: { canonical: "/" },
-
   appleWebApp: {
     capable: true,
     title: SITE_NAME,
@@ -133,7 +144,6 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: SITE_URL,
     siteName: SITE_NAME,
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
@@ -171,10 +181,22 @@ export const metadata: Metadata = {
     },
   },
 
+  // Search engine verification (set these in your environment variables).
+  // Google: Search Console -> HTML tag -> content value
+  // Bing:   Bing Webmaster Tools -> meta tag -> content value
+  // Yandex: Yandex Webmaster -> meta tag -> content value
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
+    other: process.env.NEXT_PUBLIC_BING_VERIFICATION
+      ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_VERIFICATION }
+      : undefined,
+  },
+
   other: {
     "msapplication-TileColor": "#6B4A2F",
     "msapplication-config": "/browserconfig.xml",
-    // AdSense account meta tag (backup verification method)
+    // AdSense account meta tag (rendered once, here, in <head>)
     "google-adsense-account": ADSENSE_CLIENT,
   },
 };
@@ -185,27 +207,30 @@ export const metadata: Metadata = {
 
 const organizationJsonLd = {
   "@context": "https://schema.org",
-  "@type": "Organization",
+  "@type": "NewsMediaOrganization",
+  "@id": `${SITE_URL}/#organization`,
   name: SITE_NAME,
   url: SITE_URL,
-  logo: `${SITE_URL}/seo/icon-512.png`,
+  logo: {
+    "@type": "ImageObject",
+    url: `${SITE_URL}/seo/icon-512.png`,
+    width: 512,
+    height: 512,
+  },
   description: SITE_DESCRIPTION,
   founder: { "@type": "Person", name: "Talha Tabish" },
-  sameAs: [],
+  ...(SOCIAL_PROFILES.length > 0 ? { sameAs: SOCIAL_PROFILES } : {}),
 };
 
 const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
+  "@id": `${SITE_URL}/#website`,
   name: SITE_NAME,
   url: SITE_URL,
   description: SITE_DESCRIPTION,
   inLanguage: "en",
-  publisher: {
-    "@type": "Organization",
-    name: SITE_NAME,
-    url: SITE_URL,
-  },
+  publisher: { "@id": `${SITE_URL}/#organization` },
 };
 
 // ============================================
@@ -396,16 +421,8 @@ export default function RootLayout({
       style={premiumTypography}
     >
       <head>
-        {/* Google AdSense — site ownership verification meta tag.
-            Google's verifier checks for this exact tag in the <head>. */}
-        <meta name="google-adsense-account" content={ADSENSE_CLIENT} />
-
-        {/* Google AdSense loader script */}
-        <script
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
-          crossOrigin="anonymous"
-        />
+        {/* The google-adsense-account meta tag is rendered by `metadata.other`
+            above, so it is NOT duplicated here. */}
 
         {/* JSON-LD */}
         <script
@@ -436,6 +453,16 @@ export default function RootLayout({
             <Toaster />
           </ClerkProvider>
         </ThemeProvider>
+
+        {/* Google AdSense loader — loaded after the page is interactive so it
+            does not slow down Core Web Vitals (a ranking factor). */}
+        <Script
+          id="adsense-loader"
+          async
+          strategy="afterInteractive"
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+          crossOrigin="anonymous"
+        />
       </body>
     </html>
   );

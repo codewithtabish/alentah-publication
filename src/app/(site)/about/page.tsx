@@ -1,16 +1,15 @@
 // src/app/(site)/about/page.tsx
 // ============================================================
 // About — ALENTAH
-// Editorial About page: hero, editors, values, principles,
-// what we cover, closing quote. Images are softly rounded
-// and a bit smaller, page carries more editorial substance.
-// Includes a back button at the top.
+// Editorial About page: hero, mission, editors, stats, principles,
+// what we cover, values, contact, closing quote.
 // No horizontal padding — the global Container handles it.
 //
-// Performance:
-//   - Editor photos use priority + fetchPriority="high"
-//     (they are the LCP elements on this page).
-//   - Images use quality={85} for smaller file sizes.
+// SEO notes:
+//   - Own canonical (/about) — never inherited from the root layout.
+//   - Root <main> lives in the root layout, so this page uses <div>.
+//   - Organization is referenced by @id (defined once in layout.tsx).
+//   - Only true, verifiable claims (founded 2026).
 // ============================================================
 
 import Image from "next/image";
@@ -24,25 +23,14 @@ import { ArrowLeft } from "lucide-react";
 
 const SITE_URL = "https://www.alentah.com";
 
+const PAGE_TITLE = "About Alentah — Our Mission & Editorial Principles";
+
 const SHORT_DESCRIPTION =
   "Alentah's mission, editors, and the standards we hold every story to. An independent publication for readers who value depth over speed.";
 
 export const metadata: Metadata = {
-  title: "About Alentah — Our Mission & Editorial Principles",
+  title: PAGE_TITLE,
   description: SHORT_DESCRIPTION,
-  keywords: [
-    "About Alentah",
-    "Alentah mission",
-    "Alentah editors",
-    "Talha Tabish",
-    "Sudais Azlan",
-    "independent publication",
-    "slow journalism",
-    "editorial standards",
-    "editorial principles",
-    "digital magazine",
-    "long-form journalism",
-  ],
   alternates: {
     canonical: "/about",
   },
@@ -50,7 +38,7 @@ export const metadata: Metadata = {
     type: "website",
     url: "/about",
     siteName: "Alentah",
-    title: "About Alentah — Our Mission & Editorial Principles",
+    title: PAGE_TITLE,
     description: SHORT_DESCRIPTION,
     images: [
       {
@@ -63,7 +51,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "About Alentah — Our Mission & Editorial Principles",
+    title: PAGE_TITLE,
     description: SHORT_DESCRIPTION,
     images: ["/seo/og-image.png"],
   },
@@ -76,37 +64,21 @@ export const metadata: Metadata = {
 const aboutPageJsonLd = {
   "@context": "https://schema.org",
   "@type": "AboutPage",
+  "@id": `${SITE_URL}/about#webpage`,
   name: "About Alentah",
   url: `${SITE_URL}/about`,
   description:
-    "Alentah is an independent editorial publication covering technology, business, finance, lifestyle, culture, travel, health, science, and design.",
+    "Alentah is an independent editorial publication covering technology, software, science, business, and culture.",
   inLanguage: "en",
+  isPartOf: { "@id": `${SITE_URL}/#website` },
+  about: { "@id": `${SITE_URL}/#organization` },
   mainEntity: {
-    "@type": "Organization",
+    "@type": "NewsMediaOrganization",
+    "@id": `${SITE_URL}/#organization`,
     name: "Alentah",
     url: SITE_URL,
-    logo: `${SITE_URL}/seo/icon-512.png`,
-    foundingDate: "2014",
-    founder: {
-      "@type": "Person",
-      name: "Talha Tabish",
-      jobTitle: "Editor-in-Chief",
-      url: SITE_URL,
-    },
-    knowsAbout: [
-      "Technology",
-      "Business",
-      "Finance",
-      "Lifestyle",
-      "Culture",
-      "Travel",
-      "Health",
-      "Science",
-      "Design",
-      "Slow Journalism",
-      "Editorial Writing",
-    ],
-    employee: [
+    foundingDate: "2026",
+    founder: [
       {
         "@type": "Person",
         name: "Talha Tabish",
@@ -121,6 +93,15 @@ const aboutPageJsonLd = {
         description:
           "Senior AI Engineer. Focused on the intersection of language, intelligence, and the craft of publishing.",
       },
+    ],
+    knowsAbout: [
+      "Technology",
+      "Software Development",
+      "Artificial Intelligence",
+      "Science",
+      "Business",
+      "Culture",
+      "Slow Journalism",
     ],
   },
 };
@@ -161,7 +142,7 @@ const EDITORS = [
     name: "Sudais Azlan",
     role: "Co-Founder & Editor",
     image: "/images/sudais.webp",
-    imageAlt: "Sudais Azlan, Subtitle Editor of Alentah",
+    imageAlt: "Sudais Azlan, Co-Founder and Editor of Alentah",
     bio: "Senior AI Engineer. Focused on the intersection of language, intelligence, and the craft of publishing. He shapes every story before it reaches the reader.",
     signatureType: "sudais" as const,
   },
@@ -241,10 +222,11 @@ const COVERAGE = [
   },
 ];
 
+// Only true, verifiable facts. Update these as the site grows.
 const STATS = [
-  { value: "12+", label: "Years of editorial work" },
-  { value: "3", label: "Core domains of coverage" },
-  { value: "40+", label: "In-depth guides published" },
+  { value: "2026", label: "Year founded" },
+  { value: "2", label: "Founding editors" },
+  { value: String(COVERAGE.length), label: "Areas of coverage" },
   { value: "100%", label: "Independently funded" },
 ];
 
@@ -484,7 +466,8 @@ function Signature({
 
 export default function AboutPage() {
   return (
-    <main className="w-full">
+    // NOTE: <div>, not <main> — the root layout already renders <main>.
+    <div className="w-full">
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -569,34 +552,42 @@ export default function AboutPage() {
             <p className="text-lg leading-8 text-muted-foreground">
               Alentah is an independent digital publication about technology,
               software, and the ideas shaping the next decade. We were founded
-              on a simple observation: the internet produces more information
-              than at any point in history, and less understanding than it
-              should. Most technology writing covers announcements. Very
-              little of it explains mechanisms.
+              in 2026 on a simple observation: the internet produces more
+              information than at any point in history, and less understanding
+              than it should. Most technology writing covers announcements.
+              Very little of it explains mechanisms.
             </p>
 
             <p className="text-lg leading-8 text-muted-foreground">
               We write for readers who want to know how things actually work
               — the architecture beneath the product, the economics behind
               the strategy, the trade-offs that determine what ships and what
-              quietly does not. We are not a news site. We are not a review
-              site. We are a small editorial team focused on long-form
-              analysis, technical explanation, and the kind of writing that
-              is still useful two years after it is published.
+              quietly does not. We do not chase breaking news. We are a small
+              editorial team focused on long-form analysis, technical
+              explanation, and the kind of writing that is still useful two
+              years after it is published.
             </p>
 
             <p className="text-lg leading-8 text-muted-foreground">
               Every article on this site goes through research, technical
               review, and multiple rounds of editing before it reaches a
               reader. Every claim is sourced. Every diagram is drawn for a
-              reason. Every headline is written to inform, not to bait.
+              reason. Every headline is written to inform, not to bait. Read
+              the full{" "}
+              <Link
+                href="/ethics"
+                className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
+              >
+                editorial standards and ethics policy
+              </Link>
+              .
             </p>
 
             <div className="mt-8 border-l-2 border-primary/40 pl-5">
               <p className="text-base leading-7 text-muted-foreground">
                 <strong className="font-semibold text-foreground">
                   The standard we hold:
-                </strong>
+                </strong>{" "}
                 if a piece does not teach the reader something they could not
                 have learned from a press release, we do not publish it.
               </p>
@@ -670,14 +661,14 @@ export default function AboutPage() {
       </section>
 
       {/* =====================================================
-          STATS
+          STATS (true facts only)
           ===================================================== */}
       <section
         aria-labelledby="stats-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
       >
         <h2 id="stats-heading" className="sr-only">
-          Alentah by the numbers
+          Alentah at a glance
         </h2>
 
         <div aria-hidden="true" className="h-px w-full bg-border" />
@@ -752,9 +743,9 @@ export default function AboutPage() {
         <div className="mt-10 grid grid-cols-1 gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {COVERAGE.map((item) => (
             <div key={item.label}>
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
                 {item.label}
-              </p>
+              </h3>
               <p className="mt-3 text-[15px] leading-7 text-muted-foreground">
                 {item.description}
               </p>
@@ -817,18 +808,21 @@ export default function AboutPage() {
               every message.
             </p>
             <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3 text-[14px]">
-              {/* Plain text — user can select and copy manually */}
-              <span className="select-all font-mono text-foreground">
+              <a
+                href="mailto:hello@alentah.com"
+                className="font-mono text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
+              >
                 hello@alentah.com
-              </span>
+              </a>
             </div>
           </div>
 
           <div className="lg:pb-1">
             <Link
-              href="/articles"
+              href="/contact"
               className="group inline-flex h-11 items-center gap-2 rounded-full border border-border bg-background px-5 text-[11px] font-bold uppercase tracking-[0.15em] text-foreground transition-colors hover:bg-muted"
             >
+              <span>Contact us</span>
               <span
                 aria-hidden="true"
                 className="transition-transform duration-200 group-hover:translate-x-0.5"
@@ -873,6 +867,6 @@ export default function AboutPage() {
           </p>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

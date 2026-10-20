@@ -5,6 +5,7 @@
 // The back button is the shared BackButton client component.
 // ============================================================
 
+import Link from "next/link";
 import type { Metadata } from "next";
 import { BackButton } from "@/components/site/general/backs/back-button";
 
@@ -13,38 +14,41 @@ import { BackButton } from "@/components/site/general/backs/back-button";
 // ============================================================
 
 const SITE_URL = "https://www.alentah.com";
+const PAGE_URL = `${SITE_URL}/careers`;
+const ORGANIZATION_ID = `${SITE_URL}/#organization`;
+const WEBSITE_ID = `${SITE_URL}/#website`;
+const OG_IMAGE = `${SITE_URL}/seo/og-image.png`;
+const CAREERS_EMAIL = "careers@alentah.com";
 
-const SHORT_DESCRIPTION =
-  "Join a small, independent editorial team. We hire slowly, write carefully, and ship work we're proud to sign. Remote-first.";
+const TITLE = "Careers at Alentah | Join an Independent Newsroom";
+const DESCRIPTION =
+  "Join Alentah, a small, independent, remote-first editorial team. We hire slowly, write carefully and ship work we're proud to sign. See how we hire.";
 
 export const metadata: Metadata = {
-  title: "Careers at Alentah — Build Slow Journalism With Us",
-  description: SHORT_DESCRIPTION,
-  keywords: [
-    "Alentah careers",
-    "work at Alentah",
-    "editorial jobs",
-    "writing jobs",
-    "remote editorial jobs",
-    "long-form journalism jobs",
-    "independent publication careers",
-    "media jobs",
-    "engineering jobs at Alentah",
-    "design jobs at Alentah",
-    "Talha Tabish",
-  ],
-  alternates: {
-    canonical: "/careers",
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: PAGE_URL },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
   openGraph: {
     type: "website",
-    url: "/careers",
+    url: PAGE_URL,
     siteName: "Alentah",
-    title: "Careers at Alentah — Build Slow Journalism With Us",
-    description: SHORT_DESCRIPTION,
+    locale: "en_US",
+    title: TITLE,
+    description: DESCRIPTION,
     images: [
       {
-        url: "/seo/og-image.png",
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "Careers at Alentah",
@@ -53,72 +57,43 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Careers at Alentah — Build Slow Journalism With Us",
-    description: SHORT_DESCRIPTION,
-    images: ["/seo/og-image.png"],
-  },
-  robots: {
-    index: true,
-    follow: true,
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [OG_IMAGE],
   },
 };
 
 // ============================================================
 // STRUCTURED DATA (JSON-LD)
+// Organization and WebSite live in the root layout; here we only
+// reference them by @id. No JobPosting until a real role is open.
 // ============================================================
 
-const breadcrumbJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  itemListElement: [
-    {
-      "@type": "ListItem",
-      position: 1,
-      name: "Home",
-      item: SITE_URL,
-    },
-    {
-      "@type": "ListItem",
-      position: 2,
-      name: "Careers",
-      item: `${SITE_URL}/careers`,
-    },
-  ],
-};
-
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Alentah",
-  url: SITE_URL,
-  logo: `${SITE_URL}/seo/icon-512.png`,
-  description:
-    "An independent editorial publication covering technology, business, finance, lifestyle, culture, travel, health, science, and design.",
-  founder: {
-    "@type": "Person",
-    name: "Talha Tabish",
-    jobTitle: "Editor-in-Chief",
-  },
-  sameAs: [],
-};
+function jsonLd(data: object): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
 
 const webPageJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebPage",
+  "@id": `${PAGE_URL}#webpage`,
+  url: PAGE_URL,
   name: "Careers at Alentah",
-  url: `${SITE_URL}/careers`,
-  description:
-    "We are a small, independent editorial team. We hire slowly, write carefully, and ship work we are proud to sign.",
+  description: DESCRIPTION,
   inLanguage: "en",
-  isPartOf: {
-    "@type": "WebSite",
-    name: "Alentah",
-    url: SITE_URL,
-  },
-  about: {
-    "@type": "Thing",
-    name: "Careers in independent publishing, editorial, and product",
-  },
+  isPartOf: { "@id": WEBSITE_ID },
+  about: { "@id": ORGANIZATION_ID },
+  breadcrumb: { "@id": `${PAGE_URL}#breadcrumb` },
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "@id": `${PAGE_URL}#breadcrumb`,
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+    { "@type": "ListItem", position: 2, name: "Careers", item: PAGE_URL },
+  ],
 };
 
 // ============================================================
@@ -179,34 +154,18 @@ const HIRING_STEPS = [
 export default function CareersPage() {
   return (
     <main className="w-full">
-      {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbJsonLd),
-        }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(webPageJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(organizationJsonLd),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(webPageJsonLd),
-        }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbJsonLd) }}
       />
 
-      {/* =====================================================
-          BACK BUTTON
-          ===================================================== */}
       <BackButton />
 
-      {/* =====================================================
-          HERO
-          ===================================================== */}
+      {/* HERO */}
       <section
         aria-labelledby="careers-heading"
         className="pt-10 sm:pt-12 lg:pt-14"
@@ -233,9 +192,7 @@ export default function CareersPage() {
         </div>
       </section>
 
-      {/* =====================================================
-          WHY US
-          ===================================================== */}
+      {/* WHY US */}
       <section
         aria-labelledby="why-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
@@ -262,6 +219,24 @@ export default function CareersPage() {
               ))}
             </div>
 
+            <p className="mt-6 max-w-2xl text-[14px] leading-7 text-muted-foreground">
+              Learn more{" "}
+              <Link
+                href="/about"
+                className="underline underline-offset-4 hover:text-primary"
+              >
+                about Alentah
+              </Link>{" "}
+              and read our{" "}
+              <Link
+                href="/ethics"
+                className="underline underline-offset-4 hover:text-primary"
+              >
+                editorial standards
+              </Link>
+              .
+            </p>
+
             <div className="mt-8 border-l-2 border-primary/40 pl-5">
               <p className="font-serif text-lg italic leading-7 text-foreground sm:text-xl">
                 We publish less than everyone else, and we mean more.
@@ -271,9 +246,7 @@ export default function CareersPage() {
         </div>
       </section>
 
-      {/* =====================================================
-          CURRENT OPENINGS
-          ===================================================== */}
+      {/* CURRENT OPENINGS */}
       <section
         aria-labelledby="openings-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
@@ -303,9 +276,7 @@ export default function CareersPage() {
         </div>
       </section>
 
-      {/* =====================================================
-          REACH OUT
-          ===================================================== */}
+      {/* REACH OUT */}
       <section
         aria-labelledby="reach-out-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
@@ -331,32 +302,43 @@ export default function CareersPage() {
           </div>
 
           <div className="lg:col-span-6">
-            {/* Email — plain copyable text, no underline, no link */}
-            <p className="select-all font-mono text-3xl text-foreground sm:text-4xl lg:text-[2.5rem]">
-              careers@alentah.com
-            </p>
+            <a
+              href={`mailto:${CAREERS_EMAIL}`}
+              className="block select-all break-all font-mono text-2xl text-foreground transition-colors hover:text-primary sm:text-4xl lg:text-[2.5rem]"
+            >
+              {CAREERS_EMAIL}
+            </a>
 
             <p className="mt-5 max-w-sm text-[13px] leading-6 text-muted-foreground">
               Reply time: 5–7 days. If we&rsquo;re slow, it&rsquo;s because
               we&rsquo;re reading carefully.
             </p>
+
+            <p className="mt-3 max-w-sm text-[13px] leading-6 text-muted-foreground">
+              Press or general questions? Use the{" "}
+              <Link
+                href="/contact"
+                className="underline underline-offset-4 hover:text-primary"
+              >
+                contact page
+              </Link>
+              .
+            </p>
           </div>
         </div>
       </section>
 
-      {/* =====================================================
-          WHAT WE LOOK FOR
-          ===================================================== */}
+      {/* WHAT WE LOOK FOR */}
       <section
         aria-labelledby="look-for-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
       >
-        <p
+        <h2
           id="look-for-heading"
           className="text-[10px] font-bold uppercase tracking-[0.28em] text-primary"
         >
           What we look for
-        </p>
+        </h2>
 
         <div className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-8 lg:gap-12">
           {WHAT_WE_LOOK_FOR.map((item) => (
@@ -377,20 +359,18 @@ export default function CareersPage() {
         </div>
       </section>
 
-      {/* =====================================================
-          HOW WE HIRE
-          ===================================================== */}
+      {/* HOW WE HIRE */}
       <section
         aria-labelledby="hire-heading"
         className="mt-20 sm:mt-24 lg:mt-32"
       >
         <div className="flex flex-wrap items-baseline gap-x-2">
-          <p
+          <h2
             id="hire-heading"
             className="text-[10px] font-bold uppercase tracking-[0.28em] text-primary"
           >
             How we hire
-          </p>
+          </h2>
           <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
             (when a role does open)
           </span>
@@ -398,9 +378,9 @@ export default function CareersPage() {
 
         <div aria-hidden="true" className="mt-6 h-px w-full bg-border" />
 
-        <div className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+        <ol className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {HIRING_STEPS.map((step) => (
-            <div key={step.number}>
+            <li key={step.number}>
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary tabular-nums">
                 {step.number}
               </p>
@@ -412,14 +392,12 @@ export default function CareersPage() {
               <p className="mt-3 text-[15px] leading-7 text-muted-foreground">
                 {step.body}
               </p>
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </section>
 
-      {/* =====================================================
-          CLOSING STRIP
-          ===================================================== */}
+      {/* CLOSING */}
       <section
         aria-labelledby="closing-heading"
         className="mt-24 pb-24 sm:mt-28 sm:pb-28 lg:mt-32 lg:pb-32"
