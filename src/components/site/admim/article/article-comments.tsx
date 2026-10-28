@@ -19,6 +19,31 @@ interface ArticleCommentsProps {
   initialComments: CommentItem[];
 }
 
+/**
+ * Forces this component to always render left-to-right (English),
+ * even when the site/page is in RTL (Urdu). The inline !important
+ * beats any global `[dir="rtl"]` / `direction: rtl` stylesheet rule.
+ */
+const LTR_STYLE: React.CSSProperties = {
+  direction: "ltr",
+  unicodeBidi: "isolate",
+};
+
+function useForceLtr<T extends HTMLElement>() {
+  const ref = React.useRef<T>(null);
+
+  React.useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.setAttribute("dir", "ltr");
+    el.setAttribute("lang", "en");
+    el.style.setProperty("direction", "ltr", "important");
+    el.style.setProperty("unicode-bidi", "isolate", "important");
+  }, []);
+
+  return ref;
+}
+
 function getAuthorName(c: CommentItem): string {
   return (
     [c.user.firstName, c.user.lastName].filter(Boolean).join(" ") ||
@@ -60,6 +85,7 @@ export function ArticleComments({
 }: ArticleCommentsProps) {
   const pathname = usePathname();
   const { isSignedIn, user } = useUser();
+  const rootRef = useForceLtr<HTMLElement>();
 
   const [comments, setComments] = React.useState<CommentItem[]>(initialComments);
   const [content, setContent] = React.useState("");
@@ -150,10 +176,12 @@ export function ArticleComments({
   return (
     <>
       <section
+        ref={rootRef}
         dir="ltr"
         lang="en"
+        style={LTR_STYLE}
         aria-labelledby="comments-heading"
-        className="mt-14 text-left sm:mt-16"
+        className="mt-14 text-left font-sans sm:mt-16"
       >
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4 sm:mb-8 sm:pb-5">
           <div className="flex items-center gap-2.5">
@@ -184,6 +212,7 @@ export function ArticleComments({
                 <textarea
                   ref={textareaRef}
                   dir="ltr"
+                  style={LTR_STYLE}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Share your thoughts…"
@@ -191,7 +220,7 @@ export function ArticleComments({
                   maxLength={2000}
                   disabled={submitting}
                   className={cn(
-                    "w-full resize-none rounded-xl border border-border bg-background px-3.5 py-2.5 text-left",
+                    "w-full resize-none rounded-xl border border-border bg-background px-3.5 py-2.5 text-left font-sans",
                     "text-[14px] leading-relaxed text-foreground placeholder:text-muted-foreground/60",
                     "focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/30",
                     "disabled:opacity-60"
@@ -199,7 +228,7 @@ export function ArticleComments({
                 />
 
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="font-sans text-[11px] text-muted-foreground">
                     Posting as{" "}
                     <span className="font-medium text-foreground">{user?.fullName ?? "Reader"}</span>
                     <span className="mx-1.5 text-muted-foreground/40">·</span>
@@ -230,7 +259,7 @@ export function ArticleComments({
           </form>
         ) : (
           <div className="mb-8 rounded-2xl border border-dashed border-border bg-muted/30 p-6 text-center sm:mb-10">
-            <p className="text-[14px] text-muted-foreground">Sign in to join the conversation.</p>
+            <p className="font-sans text-[14px] text-muted-foreground">Sign in to join the conversation.</p>
             <SignInButton mode="modal" forceRedirectUrl={redirectUrl} signUpForceRedirectUrl={redirectUrl}>
               <button
                 type="button"
@@ -248,7 +277,7 @@ export function ArticleComments({
         )}
 
         {total === 0 ? (
-          <p className="py-8 text-center text-[14px] text-muted-foreground">No comments yet. Be the first.</p>
+          <p className="py-8 text-center font-sans text-[14px] text-muted-foreground">No comments yet. Be the first.</p>
         ) : (
           <ul className="space-y-5">
             {comments.map((c) => {
@@ -270,7 +299,7 @@ export function ArticleComments({
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <p className="text-[13px] font-semibold text-foreground">{authorName}</p>
+                      <p className="font-sans text-[13px] font-semibold text-foreground">{authorName}</p>
 
                       {isOwn && (
                         <span className="rounded-full border border-primary/20 bg-primary/10 px-1.5 py-px text-[9px] font-semibold uppercase tracking-[0.1em] text-primary">
@@ -278,7 +307,7 @@ export function ArticleComments({
                         </span>
                       )}
 
-                      <span className="text-[11px] text-muted-foreground">{formatRelative(c.createdAt)}</span>
+                      <span className="font-sans text-[11px] text-muted-foreground">{formatRelative(c.createdAt)}</span>
 
                       {isOwn && (
                         <button
@@ -298,7 +327,7 @@ export function ArticleComments({
                       )}
                     </div>
 
-                    <p className="mt-1.5 whitespace-pre-wrap text-[14px] leading-7 text-foreground/90 wrap-anywhere sm:text-[14.5px]">
+                    <p className="mt-1.5 whitespace-pre-wrap text-left font-sans text-[14px] leading-7 text-foreground/90 wrap-anywhere sm:text-[14.5px]">
                       {c.content}
                     </p>
                   </div>
@@ -332,6 +361,7 @@ function DeleteCommentDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const rootRef = useForceLtr<HTMLDivElement>();
   const inputRef = React.useRef<HTMLButtonElement>(null);
 
   React.useEffect(() => {
@@ -358,12 +388,14 @@ function DeleteCommentDialog({
 
   return (
     <div
+      ref={rootRef}
       dir="ltr"
       lang="en"
+      style={LTR_STYLE}
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-comment-title"
-      className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 px-4 font-sans backdrop-blur-sm"
       onClick={() => !deleting && onCancel()}
     >
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-3xl border border-border bg-background p-6 shadow-2xl sm:p-7">
@@ -375,11 +407,11 @@ function DeleteCommentDialog({
           Delete comment?
         </h2>
 
-        <p className="mt-3 text-center text-sm text-muted-foreground">This cannot be undone.</p>
+        <p className="mt-3 text-center font-sans text-sm text-muted-foreground">This cannot be undone.</p>
 
         <div className="mt-5 rounded-xl border border-border bg-muted/40 p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Your comment</p>
-          <p className="mt-1.5 text-[13px] leading-6 text-foreground/85 wrap-anywhere">{preview}</p>
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Your comment</p>
+          <p className="mt-1.5 text-left font-sans text-[13px] leading-6 text-foreground/85 wrap-anywhere">{preview}</p>
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-2">
