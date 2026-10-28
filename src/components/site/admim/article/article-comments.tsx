@@ -149,7 +149,12 @@ export function ArticleComments({
 
   return (
     <>
-      <section aria-labelledby="comments-heading" className="mt-14 sm:mt-16">
+      <section
+        dir="ltr"
+        lang="en"
+        aria-labelledby="comments-heading"
+        className="mt-14 text-left sm:mt-16"
+      >
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4 sm:mb-8 sm:pb-5">
           <div className="flex items-center gap-2.5">
             <MessageSquare className="size-5 text-primary" strokeWidth={1.75} aria-hidden="true" />
@@ -178,6 +183,7 @@ export function ArticleComments({
               <div className="min-w-0 flex-1">
                 <textarea
                   ref={textareaRef}
+                  dir="ltr"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Share your thoughts…"
@@ -185,7 +191,7 @@ export function ArticleComments({
                   maxLength={2000}
                   disabled={submitting}
                   className={cn(
-                    "w-full resize-none rounded-xl border border-border bg-background px-3.5 py-2.5",
+                    "w-full resize-none rounded-xl border border-border bg-background px-3.5 py-2.5 text-left",
                     "text-[14px] leading-relaxed text-foreground placeholder:text-muted-foreground/60",
                     "focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/30",
                     "disabled:opacity-60"
@@ -352,6 +358,8 @@ function DeleteCommentDialog({
 
   return (
     <div
+      dir="ltr"
+      lang="en"
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-comment-title"
