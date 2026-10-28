@@ -1,10 +1,5 @@
+// src/components/site/pages/article/article-comments.tsx
 "use client";
-
-// ============================================================
-// ArticleComments — ALENTAH
-// Comment list + form. Auth required to post.
-// Delete uses a styled confirmation dialog (not window.confirm).
-// ============================================================
 
 import * as React from "react";
 import Image from "next/image";
@@ -18,19 +13,11 @@ import { CommentItem } from "@/actions/comments/get-comments";
 import { createComment } from "@/actions/comments/create-comment";
 import { deleteComment } from "@/actions/comments/delete-comment";
 
-// ============================================================
-// TYPES
-// ============================================================
-
 interface ArticleCommentsProps {
   blogId: string;
   blogSlug: string;
   initialComments: CommentItem[];
 }
-
-// ============================================================
-// HELPERS
-// ============================================================
 
 function getAuthorName(c: CommentItem): string {
   return (
@@ -66,10 +53,6 @@ function formatRelative(date: Date): string {
   }).format(d);
 }
 
-// ============================================================
-// COMPONENT
-// ============================================================
-
 export function ArticleComments({
   blogId,
   blogSlug,
@@ -78,14 +61,11 @@ export function ArticleComments({
   const pathname = usePathname();
   const { isSignedIn, user } = useUser();
 
-  const [comments, setComments] =
-    React.useState<CommentItem[]>(initialComments);
+  const [comments, setComments] = React.useState<CommentItem[]>(initialComments);
   const [content, setContent] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
-  const [deletingId, setDeletingId] =
-    React.useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] =
-    React.useState<CommentItem | null>(null);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<CommentItem | null>(null);
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -93,29 +73,17 @@ export function ArticleComments({
     setComments(initialComments);
   }, [initialComments]);
 
-  // ---------------------------------------------------------
-  // Redirect target — full current URL path (not just slug)
-  // usePathname() returns e.g.
-  //   /technology/software-development/how-cloud-...
-  // Falls back to "/" if pathname is somehow empty.
-  // ---------------------------------------------------------
   const redirectUrl = pathname || "/";
 
-  // ---------------------------------------------------------
-  // CREATE
-  // ---------------------------------------------------------
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     if (!isSignedIn) return;
 
     const trimmed = content.trim();
-
     if (!trimmed) {
       toast.error("Write something first.");
       return;
     }
-
     if (trimmed.length > 2000) {
       toast.error("Comment is too long (max 2000 characters).");
       return;
@@ -124,11 +92,7 @@ export function ArticleComments({
     setSubmitting(true);
 
     try {
-      const result = await createComment({
-        blogId,
-        blogSlug,
-        content: trimmed,
-      });
+      const result = await createComment({ blogId, blogSlug, content: trimmed });
 
       if (!result.success) {
         toast.error(result.error);
@@ -156,9 +120,6 @@ export function ArticleComments({
     }
   };
 
-  // ---------------------------------------------------------
-  // DELETE (actual — called from dialog)
-  // ---------------------------------------------------------
   const performDelete = async (c: CommentItem) => {
     const snapshot = comments;
     setDeletingId(c.id);
@@ -166,11 +127,7 @@ export function ArticleComments({
     setDeleteTarget(null);
 
     try {
-      const result = await deleteComment({
-        commentId: c.id,
-        blogId,
-        blogSlug,
-      });
+      const result = await deleteComment({ commentId: c.id, blogId, blogSlug });
 
       if (!result.success) {
         setComments(snapshot);
@@ -192,22 +149,11 @@ export function ArticleComments({
 
   return (
     <>
-      <section
-        aria-labelledby="comments-heading"
-        className="mt-14 sm:mt-16"
-      >
-        {/* HEADER */}
+      <section aria-labelledby="comments-heading" className="mt-14 sm:mt-16">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4 sm:mb-8 sm:pb-5">
           <div className="flex items-center gap-2.5">
-            <MessageSquare
-              className="size-5 text-primary"
-              strokeWidth={1.75}
-              aria-hidden="true"
-            />
-            <h2
-              id="comments-heading"
-              className="font-serif text-2xl tracking-tight text-foreground sm:text-3xl"
-            >
+            <MessageSquare className="size-5 text-primary" strokeWidth={1.75} aria-hidden="true" />
+            <h2 id="comments-heading" className="font-serif text-2xl tracking-tight text-foreground sm:text-3xl">
               Comments
             </h2>
             <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
@@ -216,23 +162,12 @@ export function ArticleComments({
           </div>
         </div>
 
-        {/* FORM */}
         {isSignedIn ? (
-          <form
-            onSubmit={handleSubmit}
-            className="mb-8 rounded-2xl border border-border bg-card p-3.5 sm:mb-10 sm:p-5"
-          >
+          <form onSubmit={handleSubmit} className="mb-8 rounded-2xl border border-border bg-card p-3.5 sm:mb-10 sm:p-5">
             <div className="flex items-start gap-3">
               <div className="relative size-9 shrink-0 overflow-hidden rounded-full border border-border bg-muted sm:size-10">
                 {user?.imageUrl ? (
-                  <Image
-                    src={user.imageUrl}
-                    alt={user.fullName ?? "You"}
-                    fill
-                    sizes="40px"
-                    className="object-cover"
-                    unoptimized
-                  />
+                  <Image src={user.imageUrl} alt={user.fullName ?? "You"} fill sizes="40px" className="object-cover" unoptimized />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-primary text-[12px] font-semibold text-primary-foreground">
                     {getInitials(user?.fullName ?? "You")}
@@ -253,20 +188,16 @@ export function ArticleComments({
                     "w-full resize-none rounded-xl border border-border bg-background px-3.5 py-2.5",
                     "text-[14px] leading-relaxed text-foreground placeholder:text-muted-foreground/60",
                     "focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/30",
-                    "disabled:opacity-60",
+                    "disabled:opacity-60"
                   )}
                 />
 
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                   <p className="text-[11px] text-muted-foreground">
                     Posting as{" "}
-                    <span className="font-medium text-foreground">
-                      {user?.fullName ?? "Reader"}
-                    </span>
+                    <span className="font-medium text-foreground">{user?.fullName ?? "Reader"}</span>
                     <span className="mx-1.5 text-muted-foreground/40">·</span>
-                    <span className="tabular-nums">
-                      {content.length}/2000
-                    </span>
+                    <span className="tabular-nums">{content.length}/2000</span>
                   </p>
 
                   <button
@@ -274,10 +205,8 @@ export function ArticleComments({
                     disabled={submitting || content.trim().length === 0}
                     className={cn(
                       "inline-flex h-9 items-center justify-center gap-2 rounded-full px-4",
-                      "bg-primary text-primary-foreground",
-                      "text-[11px] font-semibold uppercase tracking-[0.15em]",
-                      "transition-colors hover:bg-primary/90",
-                      "disabled:cursor-not-allowed disabled:opacity-50",
+                      "bg-primary text-primary-foreground text-[11px] font-semibold uppercase tracking-[0.15em]",
+                      "transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                     )}
                   >
                     {submitting ? (
@@ -295,22 +224,15 @@ export function ArticleComments({
           </form>
         ) : (
           <div className="mb-8 rounded-2xl border border-dashed border-border bg-muted/30 p-6 text-center sm:mb-10">
-            <p className="text-[14px] text-muted-foreground">
-              Sign in to join the conversation.
-            </p>
-
-            <SignInButton
-              mode="modal"
-              forceRedirectUrl={redirectUrl}
-              signUpForceRedirectUrl={redirectUrl}
-            >
+            <p className="text-[14px] text-muted-foreground">Sign in to join the conversation.</p>
+            <SignInButton mode="modal" forceRedirectUrl={redirectUrl} signUpForceRedirectUrl={redirectUrl}>
               <button
                 type="button"
                 className={cn(
                   "mt-4 inline-flex h-10 items-center justify-center rounded-full px-5",
                   "border border-primary bg-transparent text-primary",
                   "text-[11px] font-semibold uppercase tracking-[0.15em]",
-                  "transition-colors hover:bg-primary hover:text-primary-foreground",
+                  "transition-colors hover:bg-primary hover:text-primary-foreground"
                 )}
               >
                 Sign in
@@ -319,11 +241,8 @@ export function ArticleComments({
           </div>
         )}
 
-        {/* LIST */}
         {total === 0 ? (
-          <p className="py-8 text-center text-[14px] text-muted-foreground">
-            No comments yet. Be the first.
-          </p>
+          <p className="py-8 text-center text-[14px] text-muted-foreground">No comments yet. Be the first.</p>
         ) : (
           <ul className="space-y-5">
             {comments.map((c) => {
@@ -332,21 +251,10 @@ export function ArticleComments({
               const isDeleting = deletingId === c.id;
 
               return (
-                <li
-                  key={c.id}
-                  className="group flex items-start gap-2.5 border-b border-border/60 pb-5 last:border-b-0 last:pb-0 sm:gap-3"
-                >
-                  {/* Avatar */}
+                <li key={c.id} className="group flex items-start gap-2.5 border-b border-border/60 pb-5 last:border-b-0 last:pb-0 sm:gap-3">
                   <div className="relative size-9 shrink-0 overflow-hidden rounded-full border border-border bg-muted sm:size-10">
                     {c.user.imageUrl ? (
-                      <Image
-                        src={c.user.imageUrl}
-                        alt={authorName}
-                        fill
-                        sizes="40px"
-                        className="object-cover"
-                        unoptimized
-                      />
+                      <Image src={c.user.imageUrl} alt={authorName} fill sizes="40px" className="object-cover" unoptimized />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-primary text-[12px] font-semibold text-primary-foreground">
                         {getInitials(authorName)}
@@ -354,13 +262,9 @@ export function ArticleComments({
                     )}
                   </div>
 
-                  {/* Body */}
                   <div className="min-w-0 flex-1">
-                    {/* Meta row */}
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <p className="text-[13px] font-semibold text-foreground">
-                        {authorName}
-                      </p>
+                      <p className="text-[13px] font-semibold text-foreground">{authorName}</p>
 
                       {isOwn && (
                         <span className="rounded-full border border-primary/20 bg-primary/10 px-1.5 py-px text-[9px] font-semibold uppercase tracking-[0.1em] text-primary">
@@ -368,9 +272,7 @@ export function ArticleComments({
                         </span>
                       )}
 
-                      <span className="text-[11px] text-muted-foreground">
-                        {formatRelative(c.createdAt)}
-                      </span>
+                      <span className="text-[11px] text-muted-foreground">{formatRelative(c.createdAt)}</span>
 
                       {isOwn && (
                         <button
@@ -390,7 +292,6 @@ export function ArticleComments({
                       )}
                     </div>
 
-                    {/* Comment body */}
                     <p className="mt-1.5 whitespace-pre-wrap text-[14px] leading-7 text-foreground/90 wrap-anywhere sm:text-[14.5px]">
                       {c.content}
                     </p>
@@ -402,7 +303,6 @@ export function ArticleComments({
         )}
       </section>
 
-      {/* DELETE CONFIRMATION DIALOG */}
       {deleteTarget && (
         <DeleteCommentDialog
           comment={deleteTarget}
@@ -414,10 +314,6 @@ export function ArticleComments({
     </>
   );
 }
-
-// ============================================================
-// DELETE CONFIRMATION DIALOG
-// ============================================================
 
 function DeleteCommentDialog({
   comment,
@@ -432,13 +328,10 @@ function DeleteCommentDialog({
 }) {
   const inputRef = React.useRef<HTMLButtonElement>(null);
 
-  // Focus the cancel button on mount so the user's default
-  // action is safe (Enter does not accidentally delete).
   React.useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  // Esc to close
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !deleting) onCancel();
@@ -447,7 +340,6 @@ function DeleteCommentDialog({
     return () => document.removeEventListener("keydown", onKey);
   }, [deleting, onCancel]);
 
-  // Body scroll lock
   React.useEffect(() => {
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -456,10 +348,7 @@ function DeleteCommentDialog({
     };
   }, []);
 
-  const preview =
-    comment.content.length > 120
-      ? comment.content.slice(0, 120).trimEnd() + "…"
-      : comment.content;
+  const preview = comment.content.length > 120 ? comment.content.slice(0, 120).trimEnd() + "…" : comment.content;
 
   return (
     <div
@@ -469,40 +358,22 @@ function DeleteCommentDialog({
       className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm"
       onClick={() => !deleting && onCancel()}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-3xl border border-border bg-background p-6 shadow-2xl sm:p-7"
-      >
-        {/* Icon */}
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-3xl border border-border bg-background p-6 shadow-2xl sm:p-7">
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
-          <AlertTriangle
-            className="h-6 w-6 text-destructive"
-            strokeWidth={1.75}
-          />
+          <AlertTriangle className="h-6 w-6 text-destructive" strokeWidth={1.75} />
         </div>
 
-        <h2
-          id="delete-comment-title"
-          className="text-center font-serif text-2xl tracking-tight text-foreground"
-        >
+        <h2 id="delete-comment-title" className="text-center font-serif text-2xl tracking-tight text-foreground">
           Delete comment?
         </h2>
 
-        <p className="mt-3 text-center text-sm text-muted-foreground">
-          This cannot be undone.
-        </p>
+        <p className="mt-3 text-center text-sm text-muted-foreground">This cannot be undone.</p>
 
-        {/* Preview */}
         <div className="mt-5 rounded-xl border border-border bg-muted/40 p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Your comment
-          </p>
-          <p className="mt-1.5 text-[13px] leading-6 text-foreground/85 wrap-anywhere">
-            {preview}
-          </p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Your comment</p>
+          <p className="mt-1.5 text-[13px] leading-6 text-foreground/85 wrap-anywhere">{preview}</p>
         </div>
 
-        {/* Actions */}
         <div className="mt-6 flex items-center justify-end gap-2">
           <button
             ref={inputRef}

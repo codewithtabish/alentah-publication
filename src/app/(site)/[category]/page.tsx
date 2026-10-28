@@ -2,26 +2,6 @@
 // ============================================================
 // Category Page — ALENTAH
 // URL: /[category]
-//
-// Renders the category hero and the interactive body
-// (subcategory filter + featured article + article grid).
-// The "Edited by" card is hidden.
-//
-// Ads (no background box, label only, fully responsive):
-//   0. Hero right side — 300x250 (lg+ only)
-//   1. After hero      — 728x90 (md+) / 300x250 (mobile)
-//   2. After body      — Native "Sponsored"
-//   3. Bottom of page  — 728x90 (md+) / 300x250 (mobile)
-//
-// SEO:
-//   - Rich metadata via generateMetadata (per category)
-//   - BreadcrumbList JSON-LD
-//   - CollectionPage JSON-LD
-//   - Canonical + OG + Twitter
-//   - robots: index, follow (public content)
-//
-// Cache invalidation is handled by `revalidateCategory` and
-// `revalidateBlog` from src/lib/cache-keys.ts.
 // ============================================================
 
 import { Suspense } from "react";
@@ -145,7 +125,8 @@ export async function generateMetadata({
       cat.blogCount === 1 ? "article" : "articles"
     } and counting.`;
 
-  const canonicalUrl = `/${cat.slug}`;
+  // FIX: Use full absolute URL for canonical
+  const canonicalUrl = `${SITE_URL}/${cat.slug}`;
 
   return {
     title,
@@ -187,7 +168,7 @@ export async function generateMetadata({
       description,
       images: [
         {
-          url: cat.coverImage ?? "/seo/og-image.png",
+          url: cat.coverImage ?? `${SITE_URL}/seo/og-image.png`,
           width: 1200,
           height: 630,
           alt: `${cat.name} on Alentah`,
@@ -200,7 +181,7 @@ export async function generateMetadata({
       site: "@alentah",
       title: `${cat.name} — Alentah`,
       description,
-      images: [cat.coverImage ?? "/seo/og-image.png"],
+      images: [cat.coverImage ?? `${SITE_URL}/seo/og-image.png`],
     },
   };
 }
